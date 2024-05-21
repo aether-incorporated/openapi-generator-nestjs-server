@@ -1,0 +1,30 @@
+import { Injectable, NotImplementedException } from '@nestjs/common';
+
+{{#imports}}
+import { {{ classname }} } from '../../{{ filename }}';
+{{/imports}}
+import { {{ classname }}Service } from '../{{ apiFilename }}.service';
+import { {{#operations}}{{#operation}}{{ operationIdCamelCase }}Context{{^-last}}, {{/-last}}{{/operation}}{{/operations}} } from '../{{ apiFilename }}.types';
+
+@Injectable()
+export class {{ classname }}ImplementationService extends {{ classname }}Service {    
+    {{#operations}}
+    {{#operation}}
+    /**
+    {{#description}}
+     * {{{.}}}
+    {{/description}}
+    {{#notes}}
+     * {{{.}}}
+    {{/notes}}
+     */
+    async {{operationId}}(context: {{ operationIdCamelCase }}Context): Promise<{{#returnType}}{{{.}}}{{/returnType}}{{^returnType}}void{{/returnType}}> { 
+        /**
+         * Implementation logic goes here
+         */
+        throw new NotImplementedException();
+    }
+
+    {{/operation}}
+    {{/operations}}
+}

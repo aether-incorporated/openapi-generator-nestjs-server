@@ -1,0 +1,54 @@
+{{#description}}
+/**
+ * {{{.}}}
+ */
+{{/description}}
+{{#required}}
+@IsNotEmpty()
+{{/required}}
+{{^required}}
+@IsOptional()
+{{/required}}
+{{#isString}}
+@IsString()
+{{/isString}}
+{{#isNumeric}}
+@IsNumber()
+{{/isNumeric}}
+{{#isBoolean}}
+@IsBoolean()
+{{/isBoolean}}
+{{#isDate}}
+@IsDateString()
+{{/isDate}}
+{{#isDateTime}}
+@IsDateString()
+{{/isDateTime}}
+{{#isArray}}
+@IsArray()
+{{/isArray}}
+{{#isEnum}}
+@IsIn([{{#allowableValues}}{{#enumVars}}{{{value}}}{{^-last}}, {{/-last}}{{/enumVars}}{{/allowableValues}}]{{#isArray}}, { each: true }{{/isArray}})
+{{/isEnum}}
+{{#isDeepObject}}
+/* Object params are not well supported. You'll need to introduce your own middleware to parse them */
+{{/isDeepObject}}
+{{! Handle unexploded query params with a special transform function }}
+{{#isQueryParam}}
+{{^isExplode}}
+@Transform((param) => {
+    const style = '{{{style}}}';
+    if (style === 'form') {
+        return param.value.split?.(',');
+    }
+    if (style === 'spaceDelimited') {
+        return param.value.split?.(' ');
+    }
+    if (style === 'pipeDelimited') {
+        return param.value.split?.('|');
+    }
+    return param.value;
+})
+{{/isExplode}}
+{{/isQueryParam}}
+{{paramName}}{{#required}}!{{/required}}{{^required}}?{{/required}}: {{{dataType}}}{{#defaultValue}} = {{{.}}}{{/defaultValue}};

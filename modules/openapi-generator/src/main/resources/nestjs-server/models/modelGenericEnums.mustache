@@ -1,0 +1,14 @@
+{{#hasEnums}}
+{{#vars}}
+{{#isEnum}}
+export enum {{classname}}{{enumName}} {
+{{#allowableValues}}
+{{#enumVars}}
+    {{name}} = {{{value}}}{{^-last}},{{/-last}}
+{{/enumVars}}
+{{/allowableValues}}
+}
+
+{{/isEnum}}
+{{/vars}}
+{{/hasEnums}}

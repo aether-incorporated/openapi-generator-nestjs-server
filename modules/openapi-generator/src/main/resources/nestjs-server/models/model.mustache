@@ -1,0 +1,34 @@
+{{>license-info}}
+{{#models}}
+{{#model}}
+{{#tsImports}}
+import { {{classname}} } from '{{filename}}';
+{{/tsImports}}
+
+import { Expose } from 'class-transformer';
+import { IsArray, IsBoolean, IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+
+{{#description}}
+/**
+ * {{{.}}}
+ */
+{{/description}}
+{{#isEnum}}
+{{>models/modelEnum}}
+{{/isEnum}}
+{{^isEnum}}
+{{#isAlias}}
+{{>models/modelAlias}}
+{{/isAlias}}
+{{^isAlias}}
+{{#oneOf}}
+{{#-first}}{{>models/modelOneOf}}{{/-first}}
+{{/oneOf}}
+{{^oneOf}}
+{{>models/modelGeneric}}
+{{/oneOf}}
+{{/isAlias}}
+{{/isEnum}}
+
+{{/model}}
+{{/models}}

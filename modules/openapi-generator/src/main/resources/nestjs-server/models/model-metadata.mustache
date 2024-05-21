@@ -1,0 +1,33 @@
+{{#description}}
+/**
+ * {{{.}}}
+ */
+{{/description}}
+{{#required}}
+@IsNotEmpty()
+{{/required}}
+{{^required}}
+@IsOptional()
+{{/required}}
+{{#isString}}
+@IsString()
+{{/isString}}
+{{#isNumeric}}
+@IsNumber()
+{{/isNumeric}}
+{{#isBoolean}}
+@IsBoolean()
+{{/isBoolean}}
+{{#isDate}}
+@IsDateString()
+{{/isDate}}
+{{#isDateTime}}
+@IsDateString()
+{{/isDateTime}}
+{{#isArray}}
+@IsArray()
+{{/isArray}}
+{{#isEnum}}
+@IsEnum({{{datatypeWithEnum}}})
+{{/isEnum}}
+@Expose()

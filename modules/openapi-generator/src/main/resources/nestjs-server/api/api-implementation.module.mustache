@@ -1,0 +1,9 @@
+import { Module } from '@nestjs/common';
+
+import { {{ classname }}ImplementationService } from './{{ apiFilename }}-implementation.service';
+
+@Module({
+    providers: [{{ classname }}ImplementationService],
+    exports: [{{ classname }}ImplementationService],
+})
+export class {{  classname }}ImplementationModule {}

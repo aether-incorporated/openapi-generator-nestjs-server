@@ -1,0 +1,22 @@
+/*eslint-disable*/
+import { Module } from '@nestjs/common';
+
+import { {{ classname }}Controller } from './{{ apiFilename }}.controller';
+import { {{ classname }}Service } from './{{ apiFilename }}.service';
+import { {{ classname }}ImplementationModule } from './implementation/{{ apiFilename }}-implementation.module';
+import { {{ classname }}ImplementationService } from './implementation/{{ apiFilename }}-implementation.service';
+
+@Module({
+    imports: [{{ classname }}ImplementationModule],
+    controllers: [{{ classname }}Controller],
+    providers: [
+        // We want to use the implementation service provided by its module.
+        // To do that, we need to provide the injected service in place of its 'parent' service
+        {
+            provide: {{ classname }}Service,
+            useFactory: (implementationService: {{ classname }}ImplementationService) => implementationService,
+            inject: [{{ classname }}ImplementationService],
+        }
+    ],
+})
+export class {{classname}}Module {}

@@ -1,0 +1,26 @@
+/*eslint-disable*/
+{{>license-info}}
+import { Injectable } from '@nestjs/common';
+
+{{#imports}}
+import { {{ classname }} } from '../{{ filename }}';
+{{/imports}}
+import { {{#operations}}{{#operation}}{{operationIdCamelCase}}Context{{^-last}}, {{/-last}}{{/operation}}{{/operations}} } from './{{apiFilename}}.types'
+
+@Injectable()
+export abstract class {{ classname }}Service {
+    {{#operations}}
+    {{#operation}}    
+    /**
+    {{#description}}
+     * {{{.}}}
+    {{/description}}    
+    {{#notes}}
+     * {{{.}}}
+    {{/notes}}
+     */
+    abstract {{operationId}}(context: {{ operationIdCamelCase }}Context): Promise<{{#returnType}}{{{.}}}{{/returnType}}{{^returnType}}void{{/returnType}}>;
+
+    {{/operation}}
+    {{/operations}}
+}
