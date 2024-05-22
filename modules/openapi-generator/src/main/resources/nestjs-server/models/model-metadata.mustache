@@ -30,4 +30,14 @@
 {{#isEnum}}
 @IsEnum({{{datatypeWithEnum}}})
 {{/isEnum}}
+{{^isPrimitiveType}}
+{{#isArray}}
+{{^items.isPrimitiveType}}
+@Type(() => {{items.dataType}})
+{{/items.isPrimitiveType}}
+{{/isArray}}
+{{^isArray}}
+@Type(() => {{dataType}})
+{{/isArray}}
+{{/isPrimitiveType}}
 @Expose()
