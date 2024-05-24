@@ -77,13 +77,13 @@ public class NestJsServerCodegen extends AbstractTypeScriptClientCodegen {
                 "Whether to generate individual guards for each operation that can be configured", operationGuards));
 
         // Git files
-        supportingFiles.add(new SupportingFile("gitignore", "", ".gitignore"));
+        supportingFiles.add(new SupportingFile("gitignore.mustache", "", ".gitignore"));
         supportingFiles.add(new SupportingFile("git_push.sh.mustache", "", "git_push.sh"));
 
         // Configuration files
-        supportingFiles.add(new SupportingFile("package.json", "", "package.json"));
-        supportingFiles.add(new SupportingFile("tsconfig.json", "", "tsconfig.json"));
-        supportingFiles.add(new SupportingFile("tsconfig.build.json", "", "tsconfig.build.json"));
+        supportingFiles.add(new SupportingFile("package.mustache", "", "package.json"));
+        supportingFiles.add(new SupportingFile("tsconfig.mustache", "", "tsconfig.json"));
+        supportingFiles.add(new SupportingFile("tsconfig.build.mustache", "", "tsconfig.build.json"));
 
         // API Files
         apiPackage = "api";
@@ -99,18 +99,18 @@ public class NestJsServerCodegen extends AbstractTypeScriptClientCodegen {
         // Model Files
         modelPackage = "models" + File.separator + "dto";
         modelTemplateFiles.put("models" + File.separator + "model.mustache", ".ts");
-        supportingFiles.add(new SupportingFile("models" + File.separator + "model-index.mustache", getModelDirectory(), "index.ts"));
+        supportingFiles.add(new SupportingFile("models" + File.separator + "index.mustache", getModelDirectory(), "index.ts"));
 
         // Main files
-        supportingFiles.add(new SupportingFile("main.ts", sourceFolder, "main.ts"));
-        supportingFiles.add(new SupportingFile("app.module.ts", sourceFolder, "app.module.ts"));
+        supportingFiles.add(new SupportingFile("main.mustache", sourceFolder, "main.ts"));
+        supportingFiles.add(new SupportingFile("app.module.mustache", sourceFolder, "app.module.ts"));
 
         // Auth files
-        supportingFiles.add(new SupportingFile("auth" + File.separator + "auth.module.ts", getAuthDirectory(), "auth.module.ts"));
-        supportingFiles.add(new SupportingFile("auth" + File.separator + "auth.decorator.ts", getAuthDirectory(), "auth.decorator.ts"));
-        supportingFiles.add(new SupportingFile("auth" + File.separator + "auth.guard.ts", getAuthDirectory(), "auth.guard.ts"));
-        supportingFiles.add(new SupportingFile("auth" + File.separator + "jwt.strategy.ts", getAuthDirectory(), "jwt.strategy.ts"));
-
+        supportingFiles.add(new SupportingFile("auth" + File.separator + "auth.module.mustache", getAuthDirectory(), "auth.module.ts"));
+        supportingFiles.add(new SupportingFile("auth" + File.separator + "auth.decorator.mustache", getAuthDirectory(), "auth.decorator.ts"));
+        supportingFiles.add(new SupportingFile("auth" + File.separator + "auth.guard.mustache", getAuthDirectory(), "auth.guard.ts"));
+        supportingFiles.add(new SupportingFile("auth" + File.separator + "auth.strategy.mustache", getAuthDirectory(), "auth.strategy.ts"));
+        supportingFiles.add(new SupportingFile("auth" + File.separator + "auth.types.mustache", getAuthDirectory(), "auth.types.ts"));
 
         generatorMetadata = GeneratorMetadata.newBuilder(generatorMetadata)
                 .stability(Stability.BETA)

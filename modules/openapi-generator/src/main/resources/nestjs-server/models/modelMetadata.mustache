@@ -33,11 +33,15 @@
 {{^isPrimitiveType}}
 {{#isArray}}
 {{^items.isPrimitiveType}}
+@ValidateNested({ each: true })
 @Type(() => {{items.dataType}})
 {{/items.isPrimitiveType}}
 {{/isArray}}
 {{^isArray}}
+{{^isEnumRef}}
+@ValidateNested({ each: true })
 @Type(() => {{dataType}})
+{{/isEnumRef}}
 {{/isArray}}
 {{/isPrimitiveType}}
 @Expose()

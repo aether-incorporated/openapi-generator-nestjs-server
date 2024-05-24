@@ -1,0 +1,80 @@
+/* eslint-disable no-restricted-syntax */
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { AuthGuard } from '@nestjs/passport';
+
+{{#hasAuthMethods}}
+import { {{#authMethods}}{{#lambda.uppercase}}{{#lambda.snakecase}}AUTH_KEY_{{name}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{^-last}}, {{/-last}}{{/authMethods}}} from './auth.types'
+{{/hasAuthMethods}}
+
+{{#authMethods}}
+@Injectable()
+export class {{#lambda.pascalcase}}{{name}}{{/lambda.pascalcase}}Guard extends AuthGuard({{#lambda.uppercase}}{{#lambda.snakecase}}AUTH_KEY_{{name}}{{/lambda.snakecase}}{{/lambda.uppercase}}) {
+    constructor(private reflector: Reflector) {
+        super();
+    }
+
+    canActivate(context: ExecutionContext): any {
+        const isEnabled = this.reflector.get<boolean>({{#lambda.uppercase}}{{#lambda.snakecase}}AUTH_KEY_{{name}}{{/lambda.snakecase}}{{/lambda.uppercase}}, context.getHandler());
+
+        if (!isEnabled) {
+            return undefined;
+        }
+
+        {{#isApiKey}} // API KEY attach API key? Also maybe tell where to look for it{{/isApiKey}}
+        {{#isBasicBasic}}// BASIC auth.. what to do?{{/isBasicBasic}}
+        {{#isHttpSignature}}// HTTP SIGNATURE.. what is this?{{/isHttpSignature}}
+        {{#isOAuth}}// OAuth -- check scopes and add to context?{{/isOAuth}}
+        {{#isOpenId}}// OpenID.. what to do?{{/isOpenId}}
+
+        return super.canActivate(context);
+    }
+}
+{{/authMethods}}
+
+/**
+ * Wrapper for ALL the auth guards used in the application.
+ * Tests each guard individually until one returns true, all are not run, or all return false.
+ */
+@Injectable()
+export class AggregateAuthGuard implements CanActivate {
+    constructor({{#authMethods}}
+        private {{#lambda.camelcase}}{{name}}{{/lambda.camelcase}}Guard: {{#lambda.pascalcase}}{{name}}{{/lambda.pascalcase}}Guard,{{#-last}}
+        {{/-last}}
+    {{/authMethods}}) {}
+
+    async canActivate(context: ExecutionContext): Promise<any> {
+        let canActivate: boolean | undefined;
+        const authGuards = [{{#authMethods}}
+            this.{{#lambda.camelcase}}{{name}}{{/lambda.camelcase}}Guard,{{#-last}}
+            {{/-last}}
+        {{/authMethods}}];
+
+        for (const authGuard of authGuards) {
+            // IMPORTANT: Many strategies throw an error if the auth fails.
+            // We need to catch it here and return false as normal if that is the case
+            try {
+                const canActivateAuthGuard = await authGuard.canActivate(context);
+
+                if (canActivateAuthGuard === true) {
+                    return true;
+                }
+                if (canActivateAuthGuard === false) {
+                    canActivate = false;
+                }
+            } catch (e) {
+                if (e instanceof UnauthorizedException) {
+                    canActivate = false;
+                }
+            }
+        }
+
+        // If it is undefined, none of the guards ran / were set, so allow access
+        if (canActivate === undefined) {
+            return true;
+        }
+
+        // Instead of a 403 we should return a 401
+        throw new UnauthorizedException();
+    }
+}

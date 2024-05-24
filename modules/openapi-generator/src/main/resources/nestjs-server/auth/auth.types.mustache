@@ -1,0 +1,9 @@
+export enum ApiKeyLocation {
+    HEADER = 'HEADER',
+    QUERY = 'QUERY',
+    COOKIE = 'COOKIE',
+}
+
+{{#authMethods}}
+export const {{#lambda.uppercase}}{{#lambda.snakecase}}AUTH_KEY_{{name}}{{/lambda.snakecase}}{{/lambda.uppercase}} = '{{name}}';
+{{/authMethods}}

@@ -21,7 +21,9 @@ import {
 } from '@nestjs/common';
 import accepts from 'accepts';
 
-import { ApiKeyAuth, ApiKeyLocation, BearerAuth, OAuth, OidcAuth } from '../../auth/auth.decorator';
+{{#hasAuthMethods}}
+import { {{#authMethods}}{{#lambda.pascalcase}}{{name}}{{/lambda.pascalcase}}{{^-last}}, {{/-last}}{{/authMethods}} } from '../../auth/auth.decorator';
+{{/hasAuthMethods}}
 {{#imports}}
 import { {{ classname }} } from '../{{ filename }}';
 {{/imports}}
@@ -50,17 +52,8 @@ export class {{ classname }}Controller {
     {{/notes}}
      */
     @{{#lambda.titlecase}}{{httpMethod}}{{/lambda.titlecase}}('{{path}}')
-    {{#authMethods}}
-    {{#isApiKey}}
-    @ApiKeyAuth(ApiKeyLocation.{{#isKeyInQuery}}QUERY{{/isKeyInQuery}}{{#isKeyInHeader}}HEADER{{/isKeyInHeader}}{{#isKeyInCookie}}COOKIE{{/isKeyInCookie}}, '{{{keyParamName}}}')
-    {{/isApiKey}}
-    {{#isBasicBearer}}
-    @BearerAuth()
-    {{/isBasicBearer}}
-    {{#isOAuth}}
-    @OAuth({{#scopes}}'{{{scope}}}'{{^-last}}, {{/-last}}{{/scopes}})
-    {{/isOAuth}}
-    {{/authMethods}}
+    {{#authMethods}}@{{#lambda.pascalcase}}{{name}}{{/lambda.pascalcase}}({{#isOAuth}}{{#scopes}}'{{{scope}}}'{{^-last}}, {{/-last}}{{/scopes}}{{/isOAuth}}){{^-last}}
+    {{/-last}}{{/authMethods}}
     async {{operationId}}(
     {{#hasBodyParam}}
     {{#bodyParams.0}}

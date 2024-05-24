@@ -1,0 +1,28 @@
+import { SetMetadata } from '@nestjs/common';
+
+{{#hasAuthMethods}}
+import { {{#authMethods}}{{#lambda.uppercase}}{{#lambda.snakecase}}AUTH_KEY_{{name}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{^-last}}, {{/-last}}{{/authMethods}}} from './auth.types';
+{{/hasAuthMethods}}
+
+{{#authMethods}}
+export const {{#lambda.pascalcase}}{{name}}{{/lambda.pascalcase}} = ({{#isOAuth}}...scopes: string[]{{/isOAuth}}) => SetMetadata({{#lambda.uppercase}}{{#lambda.snakecase}}AUTH_KEY_{{name}}{{/lambda.snakecase}}{{/lambda.uppercase}}, {{#isOAuth}}scopes || []{{/isOAuth}}{{^isOAuth}}true{{/isOAuth}});
+{{#isApiKey}} // API KEY {{keyParamName}}
+// {{#isKeyInQuery}}URL query string{{/isKeyInQuery}}{{#isKeyInHeader}}HTTP header{{/isKeyInHeader}}
+{{/isApiKey}}
+{{#isBasicBasic}}
+// BASIC BASIC
+{{/isBasicBasic}}
+{{#isBasicBearer}}
+// BEARER {{#bearerFormat}} ({{{.}}}){{/bearerFormat}}
+{{/isBasicBearer}}
+{{#isHttpSignature}}
+// HTTP SIGNATURE
+{{/isHttpSignature}}
+{{#isOAuth}}
+// OAUTH **Flow**: {{flow}}  **Authorization URL**: {{authorizationUrl}} **Scopes**: {{^scopes}}N/A{{/scopes}}{{#scopes}}  - {{scope}}: {{description}}{{/scopes}}
+{{/isOAuth}}
+{{#isOpenId}}
+// OPENID **Connect URL**: {{{openIdConnectUrl}}} **Bearer Format**: {{{bearerFormat}}}
+{{/isOpenId}}
+
+{{/authMethods}}

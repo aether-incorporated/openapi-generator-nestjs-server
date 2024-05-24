@@ -1,12 +1,12 @@
 {{>license-info}}
 {{#models}}
 {{#model}}
+import { Expose, Type } from 'class-transformer';
+import { IsArray, IsBoolean, IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+
 {{#tsImports}}
 import { {{classname}} } from '{{filename}}';
 {{/tsImports}}
-
-import { Expose, Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 {{#description}}
 /**
@@ -29,6 +29,5 @@ import { IsArray, IsBoolean, IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptio
 {{/oneOf}}
 {{/isAlias}}
 {{/isEnum}}
-
 {{/model}}
 {{/models}}
