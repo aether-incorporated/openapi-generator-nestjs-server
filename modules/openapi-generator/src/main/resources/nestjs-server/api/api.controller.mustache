@@ -17,8 +17,10 @@ import {
     Put,
     Query,
     Request,
-    Response
+    Response,
+    UseInterceptors,
 } from '@nestjs/common';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import accepts from 'accepts';
 
 {{#hasAuthMethods}}
@@ -53,7 +55,8 @@ export class {{ classname }}Controller {
      */
     @{{#lambda.titlecase}}{{httpMethod}}{{/lambda.titlecase}}('{{path}}')
     {{#authMethods}}@{{#lambda.pascalcase}}{{name}}{{/lambda.pascalcase}}({{#isOAuth}}{{#scopes}}'{{{scope}}}'{{^-last}}, {{/-last}}{{/scopes}}{{/isOAuth}}){{^-last}}
-    {{/-last}}{{/authMethods}}
+    {{/-last}}{{/authMethods}}{{#isMultipart}}
+    @UseInterceptors(AnyFilesInterceptor()){{/isMultipart}}
     async {{operationId}}(
     {{#hasBodyParam}}
     {{#bodyParams.0}}
