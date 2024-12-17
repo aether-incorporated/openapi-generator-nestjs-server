@@ -22,6 +22,8 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.core.util.Json;
+import io.swagger.v3.oas.annotations.Webhook;
+import io.swagger.v3.oas.annotations.Webhooks;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.PathItem.HttpMethod;
 import io.swagger.v3.oas.models.callbacks.Callback;
@@ -35,6 +37,7 @@ import org.openapitools.codegen.utils.ModelUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
 import java.util.*;
 
 public class InlineModelResolver {
@@ -106,7 +109,20 @@ public class InlineModelResolver {
         }
 
         flattenPaths();
+        flattenWebhooks();
         flattenComponents();
+        flattenComponentResponses();
+    }
+
+    /**
+     * Flatten inline models in Webhooks
+     */
+    private void flattenWebhooks() {
+        Map<String, PathItem> webhooks  = openAPI.getWebhooks();
+        if (webhooks == null) {
+            return;
+        }
+        flattenPathItems(webhooks);
     }
 
     /**
@@ -117,8 +133,16 @@ public class InlineModelResolver {
         if (paths == null) {
             return;
         }
+        flattenPathItems(paths);
+    }
 
-        for (Map.Entry<String, PathItem> pathsEntry : paths.entrySet()) {
+    /**
+     * Flatten inline models in path items
+     *
+     * @param pathItemMap Map of path items
+     */
+    private void flattenPathItems(Map<String, PathItem> pathItemMap) {
+        for (Map.Entry<String, PathItem> pathsEntry : pathItemMap.entrySet()) {
             PathItem path = pathsEntry.getValue();
             List<Map.Entry<HttpMethod, Operation>> toFlatten = new ArrayList<>(path.readOperationsMap().entrySet());
 
@@ -141,11 +165,15 @@ public class InlineModelResolver {
                 }
             }
 
+            // flatten path-level parameters
+            flattenParameters(pathname, path.getParameters(), null);
+
+            // flatten parameters for each operation
             for (Map.Entry<HttpMethod, Operation> operationEntry : toFlatten) {
                 Operation operation = operationEntry.getValue();
                 String inlineSchemaName = this.getInlineSchemaName(operationEntry.getKey(), pathname);
                 flattenRequestBody(inlineSchemaName, operation);
-                flattenParameters(inlineSchemaName, operation);
+                flattenParameters(inlineSchemaName, operation.getParameters(), operation.getOperationId());
                 flattenResponses(inlineSchemaName, operation);
             }
         }
@@ -231,7 +259,9 @@ public class InlineModelResolver {
                 if (schema.equals(c)) {
                     return isModelNeeded((Schema) schema.getAllOf().get(0), visitedSchemas);
                 }
-            } else if (isSingleAllOf && StringUtils.isNotEmpty(((Schema) schema.getAllOf().get(0)).get$ref())) {
+            }
+
+            if (isSingleAllOf && StringUtils.isNotEmpty(((Schema) schema.getAllOf().get(0)).get$ref())) {
                 // single allOf and it's a ref
                 return isModelNeeded((Schema) schema.getAllOf().get(0), visitedSchemas);
             }
@@ -314,7 +344,7 @@ public class InlineModelResolver {
                 if (schema.getAdditionalProperties() instanceof Schema) {
                     Schema inner = (Schema) schema.getAdditionalProperties();
                     if (inner != null) {
-                        String schemaName = resolveModelName(schema.getTitle(), modelPrefix + this.inlineSchemaOptions.get("MAP_ITEM_SUFFIX"));
+                        String schemaName = resolveModelName(inner.getTitle(), modelPrefix + this.inlineSchemaOptions.get("MAP_ITEM_SUFFIX"));
                         // Recurse to create $refs for inner models
                         gatherInlineModels(inner, schemaName);
                         if (isModelNeeded(inner)) {
@@ -346,7 +376,7 @@ public class InlineModelResolver {
             }
 
             if (items == null) {
-                LOGGER.debug("prefixItems in array schema is not supported at the moment: {}",  schema.toString());
+                LOGGER.debug("prefixItems in array schema is not supported at the moment: {}", schema.toString());
                 return;
             }
             String schemaName = resolveModelName(items.getTitle(), modelPrefix + this.inlineSchemaOptions.get("ARRAY_ITEM_SUFFIX"));
@@ -507,15 +537,20 @@ public class InlineModelResolver {
      * Flatten inline models in parameters
      *
      * @param modelName model name
-     * @param operation target operation
+     * @param parameters list of parameters
+     * @param operationId operation Id (optional)
      */
-    private void flattenParameters(String modelName, Operation operation) {
-        List<Parameter> parameters = operation.getParameters();
+    private void flattenParameters(String modelName, List<Parameter> parameters, String operationId) {
+        //List<Parameter> parameters = operation.getParameters();
         if (parameters == null) {
             return;
         }
 
         for (Parameter parameter : parameters) {
+            if (StringUtils.isNotEmpty(parameter.get$ref())) {
+                parameter = ModelUtils.getReferencedParameter(openAPI, parameter);
+            }
+
             if (parameter.getSchema() == null) {
                 continue;
             }
@@ -526,7 +561,7 @@ public class InlineModelResolver {
                 continue;
             }
             String schemaName = resolveModelName(parameterSchema.getTitle(),
-                    (operation.getOperationId() == null ? modelName : operation.getOperationId()) + "_" + parameter.getName() + "_parameter");
+                    (operationId == null ? modelName : operationId) + "_" + parameter.getName() + "_parameter");
             // Recursively gather/make inline models within this schema if any
             gatherInlineModels(parameterSchema, schemaName);
             if (isModelNeeded(parameterSchema)) {
@@ -554,6 +589,20 @@ public class InlineModelResolver {
 
             flattenContent(response.getContent(),
                     (operation.getOperationId() == null ? modelName : operation.getOperationId()) + "_" + key + "_response");
+        }
+    }
+
+    /**
+     * Flatten inline models in the responses section in the components.
+     */
+    private void flattenComponentResponses() {
+        Map<String, ApiResponse> apiResponses = openAPI.getComponents().getResponses();
+        if (apiResponses == null) {
+            return;
+        }
+
+        for (Map.Entry<String, ApiResponse> entry : apiResponses.entrySet()) {
+            flattenContent(entry.getValue().getContent(), null);
         }
     }
 

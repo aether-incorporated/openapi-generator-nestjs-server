@@ -11,7 +11,7 @@
  */
 /* tslint:disable:no-unused-variable member-ordering */
 
-import { Inject, Injectable, Optional } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { AxiosResponse } from 'axios';
 import { Observable, from, of, switchMap } from 'rxjs';
@@ -26,10 +26,12 @@ export class StoreService {
     protected basePath = 'http://petstore.swagger.io/v2';
     public defaultHeaders: Record<string,string> = {};
     public configuration = new Configuration();
+    protected httpClient: HttpService;
 
-    constructor(protected httpClient: HttpService, @Optional() configuration: Configuration) {
+    constructor(httpClient: HttpService, @Optional() configuration: Configuration) {
         this.configuration = configuration || this.configuration;
         this.basePath = configuration?.basePath || this.basePath;
+        this.httpClient = configuration?.httpClient || httpClient;
     }
 
     /**
@@ -50,7 +52,6 @@ export class StoreService {
      */
     public deleteOrder(orderId: string, ): Observable<AxiosResponse<any>>;
     public deleteOrder(orderId: string, ): Observable<any> {
-
         if (orderId === null || orderId === undefined) {
             throw new Error('Required parameter orderId was null or undefined when calling deleteOrder.');
         }
@@ -93,7 +94,6 @@ export class StoreService {
      */
     public getInventory(): Observable<AxiosResponse<{ [key: string]: number; }>>;
     public getInventory(): Observable<any> {
-
         let headers = {...this.defaultHeaders};
 
         let accessTokenObservable: Observable<any> = of(null);
@@ -139,7 +139,6 @@ export class StoreService {
      */
     public getOrderById(orderId: number, ): Observable<AxiosResponse<Order>>;
     public getOrderById(orderId: number, ): Observable<any> {
-
         if (orderId === null || orderId === undefined) {
             throw new Error('Required parameter orderId was null or undefined when calling getOrderById.');
         }
@@ -185,7 +184,6 @@ export class StoreService {
      */
     public placeOrder(order: Order, ): Observable<AxiosResponse<Order>>;
     public placeOrder(order: Order, ): Observable<any> {
-
         if (order === null || order === undefined) {
             throw new Error('Required parameter order was null or undefined when calling placeOrder.');
         }

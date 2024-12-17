@@ -11,7 +11,7 @@
  */
 /* tslint:disable:no-unused-variable member-ordering */
 
-import { Inject, Injectable, Optional } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { AxiosResponse } from 'axios';
 import { Observable, from, of, switchMap } from 'rxjs';
@@ -27,10 +27,12 @@ export class PetService {
     protected basePath = 'http://petstore.swagger.io/v2';
     public defaultHeaders: Record<string,string> = {};
     public configuration = new Configuration();
+    protected httpClient: HttpService;
 
-    constructor(protected httpClient: HttpService, @Optional() configuration: Configuration) {
+    constructor(httpClient: HttpService, @Optional() configuration: Configuration) {
         this.configuration = configuration || this.configuration;
         this.basePath = configuration?.basePath || this.basePath;
+        this.httpClient = configuration?.httpClient || httpClient;
     }
 
     /**
@@ -51,7 +53,6 @@ export class PetService {
      */
     public addPet(pet: Pet, ): Observable<AxiosResponse<Pet>>;
     public addPet(pet: Pet, ): Observable<any> {
-
         if (pet === null || pet === undefined) {
             throw new Error('Required parameter pet was null or undefined when calling addPet.');
         }
@@ -112,7 +113,6 @@ export class PetService {
      */
     public deletePet(petId: number, apiKey?: string, ): Observable<AxiosResponse<any>>;
     public deletePet(petId: number, apiKey?: string, ): Observable<any> {
-
         if (petId === null || petId === undefined) {
             throw new Error('Required parameter petId was null or undefined when calling deletePet.');
         }
@@ -166,7 +166,6 @@ export class PetService {
      */
     public findPetsByStatus(status: Array<'available' | 'pending' | 'sold'>, ): Observable<AxiosResponse<Array<Pet>>>;
     public findPetsByStatus(status: Array<'available' | 'pending' | 'sold'>, ): Observable<any> {
-
         if (status === null || status === undefined) {
             throw new Error('Required parameter status was null or undefined when calling findPetsByStatus.');
         }
@@ -225,7 +224,6 @@ export class PetService {
      */
     public findPetsByTags(tags: Array<string>, ): Observable<AxiosResponse<Array<Pet>>>;
     public findPetsByTags(tags: Array<string>, ): Observable<any> {
-
         if (tags === null || tags === undefined) {
             throw new Error('Required parameter tags was null or undefined when calling findPetsByTags.');
         }
@@ -284,7 +282,6 @@ export class PetService {
      */
     public getPetById(petId: number, ): Observable<AxiosResponse<Pet>>;
     public getPetById(petId: number, ): Observable<any> {
-
         if (petId === null || petId === undefined) {
             throw new Error('Required parameter petId was null or undefined when calling getPetById.');
         }
@@ -335,7 +332,6 @@ export class PetService {
      */
     public updatePet(pet: Pet, ): Observable<AxiosResponse<Pet>>;
     public updatePet(pet: Pet, ): Observable<any> {
-
         if (pet === null || pet === undefined) {
             throw new Error('Required parameter pet was null or undefined when calling updatePet.');
         }
@@ -397,7 +393,6 @@ export class PetService {
      */
     public updatePetWithForm(petId: number, name?: string, status?: string, ): Observable<AxiosResponse<any>>;
     public updatePetWithForm(petId: number, name?: string, status?: string, ): Observable<any> {
-
         if (petId === null || petId === undefined) {
             throw new Error('Required parameter petId was null or undefined when calling updatePetWithForm.');
         }
@@ -472,7 +467,6 @@ export class PetService {
      */
     public uploadFile(petId: number, additionalMetadata?: string, file?: Blob, ): Observable<AxiosResponse<ApiResponse>>;
     public uploadFile(petId: number, additionalMetadata?: string, file?: Blob, ): Observable<any> {
-
         if (petId === null || petId === undefined) {
             throw new Error('Required parameter petId was null or undefined when calling uploadFile.');
         }

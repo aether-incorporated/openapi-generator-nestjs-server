@@ -15,7 +15,7 @@
     }
 
     protected Builder copyOf({{classname}} value) { {{#parentModel}}
-      super.copyOf(instance);{{/parentModel}}{{#vars}}
+      super.copyOf(value);{{/parentModel}}{{#vars}}
       this.instance.{{setter}}(value.{{name}});{{/vars}}
       return this;
     }
@@ -28,9 +28,6 @@
       this.instance.{{name}}({{name}});
       return this;
     }
-    {{#deprecated}}
-    @Deprecated
-    {{/deprecated}}
     {{#openApiNullable}}{{#isNullable}}
     public {{classname}}.Builder {{name}}(JsonNullable<{{{datatypeWithEnum}}}> {{name}}) {
       this.instance.{{name}} = {{name}};

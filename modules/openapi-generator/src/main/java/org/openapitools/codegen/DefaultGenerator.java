@@ -22,6 +22,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.SpecVersion;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
@@ -29,9 +30,9 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.security.*;
 import io.swagger.v3.oas.models.tags.Tag;
-
+import lombok.Getter;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.comparator.PathFileComparator;
+import org.apache.commons.io.IOCase;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.openapitools.codegen.api.TemplateDefinition;
@@ -95,7 +96,11 @@ public class DefaultGenerator implements Generator {
     private String basePathWithoutHost;
     private String contextPath;
     private Map<String, String> generatorPropertyDefaults = new HashMap<>();
-    protected TemplateProcessor templateProcessor = null;
+    /**
+     *  Retrieves an instance to the configured template processor, available after user-defined options are
+     *  applied via 
+     */
+    @Getter protected TemplateProcessor templateProcessor = null;
 
     private List<TemplateDefinition> userDefinedTemplates = new ArrayList<>();
     private String generatorCheck = "spring";
@@ -117,6 +122,7 @@ public class DefaultGenerator implements Generator {
         this.opts = opts;
         this.openAPI = opts.getOpenAPI();
         this.config = opts.getConfig();
+
         List<TemplateDefinition> userFiles = opts.getUserDefinedTemplates();
         if (userFiles != null) {
             this.userDefinedTemplates = Collections.unmodifiableList(userFiles);
@@ -158,16 +164,6 @@ public class DefaultGenerator implements Generator {
         }
 
         return this;
-    }
-
-    /**
-     * Retrieves an instance to the configured template processor, available after user-defined options are
-     * applied via {@link DefaultGenerator#opts(ClientOptInput)}.
-     *
-     * @return A configured {@link TemplateProcessor}, or null.
-     */
-    public TemplateProcessor getTemplateProcessor() {
-        return templateProcessor;
     }
 
     /**
@@ -348,6 +344,12 @@ public class DefaultGenerator implements Generator {
             config.additionalProperties().put("unescapedAppDescription", info.getDescription());
         }
 
+        if (this.openAPI.getSpecVersion().equals(SpecVersion.V31) && !StringUtils.isEmpty(info.getSummary())) {
+            config.additionalProperties().put("appSummary", config.escapeText(info.getSummary()));
+            config.additionalProperties().put("appSummaryWithNewLines", config.escapeTextWhileAllowingNewLines(info.getSummary()));
+            config.additionalProperties().put("unescapedAppSummary", info.getSummary());
+        }
+
         if (info.getContact() != null) {
             Contact contact = info.getContact();
             if (contact.getEmail() != null) {
@@ -472,17 +474,11 @@ public class DefaultGenerator implements Generator {
 
         // process models only
         for (String name : modelKeys) {
+            processedModels.add(name);
             try {
                 //don't generate models that have an import mapping
                 if (config.schemaMapping().containsKey(name)) {
-                    LOGGER.debug("Model {} not imported due to import mapping", name);
-
-                    for (String templateName : config.modelTemplateFiles().keySet()) {
-                        // HACK: Because this returns early, could lead to some invalid model reporting.
-                        String filename = config.modelFilename(templateName, name);
-                        Path path = java.nio.file.Paths.get(filename);
-                        this.templateProcessor.skip(path, "Skipped prior to model processing due to schema mapping.");
-                    }
+                    LOGGER.info("Model {} not generated due to schema mapping", name);
                     continue;
                 }
 
@@ -503,7 +499,7 @@ public class DefaultGenerator implements Generator {
                 if (schema.getExtensions() != null && Boolean.TRUE.equals(schema.getExtensions().get("x-internal"))) {
                     LOGGER.info("Model {} not generated since x-internal is set to true", name);
                     continue;
-                } else if (ModelUtils.isFreeFormObject(schema)) { // check to see if it's a free-form object
+                } else if (ModelUtils.isFreeFormObject(schema, openAPI)) { // check to see if it's a free-form object
                     if (!ModelUtils.shouldGenerateFreeFormObjectModel(name, config)) {
                         LOGGER.info("Model {} not generated since it's a free-form object", name);
                         continue;
@@ -617,7 +613,7 @@ public class DefaultGenerator implements Generator {
         } else if (variable.getComplexType() != null && variable.getComposedSchemas() == null) {
             String ref = variable.getHasItems() ? variable.getItems().getRef() : variable.getRef();
             final String key = calculateModelKey(variable.getComplexType(), ref);
-            if (allSchemas.containsKey(key)) {
+            if (!processedModels.contains(key) && allSchemas.containsKey(key)) {
                 generateModels(files, allModels, unusedModels, aliasModels, processedModels, () -> Set.of(key));
             } else {
                 LOGGER.info("Type " + variable.getComplexType()+" of variable " + variable.getName() + " could not be resolve because it is not declared as a model.");
@@ -692,7 +688,10 @@ public class DefaultGenerator implements Generator {
         for (String tag : paths.keySet()) {
             try {
                 List<CodegenOperation> ops = paths.get(tag);
-                ops.sort((one, another) -> ObjectUtils.compare(one.operationId, another.operationId));
+                if(!this.config.isSkipSortingOperations()) {
+                    // sort operations by operationId
+                    ops.sort((one, another) -> ObjectUtils.compare(one.operationId, another.operationId));
+                }
                 OperationsMap operation = processOperations(config, tag, ops, allModels);
                 URL url = URLPathUtils.getServerURL(openAPI, config.serverVariableOverrides());
                 operation.put("basePath", basePath);
@@ -1442,6 +1441,8 @@ public class DefaultGenerator implements Generator {
         return processTemplateToFile(templateData, templateName, outputFilename, shouldGenerate, skippedByOption, this.config.getOutputDir());
     }
 
+    private final Set<String> seenFiles = new HashSet<>();
+
     private File processTemplateToFile(Map<String, Object> templateData, String templateName, String outputFilename, boolean shouldGenerate, String skippedByOption, String intendedOutputDir) throws IOException {
         String adjustedOutputFilename = outputFilename.replaceAll("//", "/").replace('/', File.separatorChar);
         File target = new File(adjustedOutputFilename);
@@ -1452,6 +1453,11 @@ public class DefaultGenerator implements Generator {
                 if (!absoluteTarget.startsWith(outDir)) {
                     throw new RuntimeException(String.format(Locale.ROOT, "Target files must be generated within the output directory; absoluteTarget=%s outDir=%s", absoluteTarget, outDir));
                 }
+
+                if (seenFiles.stream().filter(f -> f.toLowerCase(Locale.ROOT).equals(absoluteTarget.toString().toLowerCase(Locale.ROOT))).findAny().isPresent()) {
+                    LOGGER.warn("Duplicate file path detected. Not all operating systems can handle case sensitive file paths. path={}", absoluteTarget.toString());
+                }
+                seenFiles.add(absoluteTarget.toString());
                 return this.templateProcessor.write(templateData, templateName, target);
             } else {
                 this.templateProcessor.skip(target.toPath(), String.format(Locale.ROOT, "Skipped by %s options supplied by user.", skippedByOption));
@@ -1613,7 +1619,7 @@ public class DefaultGenerator implements Generator {
     }
 
     private static String generateParameterId(Parameter parameter) {
-        return parameter.getName() + ":" + parameter.getIn();
+        return null == parameter.get$ref() ? parameter.getName() + ":" + parameter.getIn() : parameter.get$ref() ;    
     }
 
     private OperationsMap processOperations(CodegenConfig config, String tag, List<CodegenOperation> ops, List<ModelMap> allModels) {
@@ -1989,7 +1995,8 @@ public class DefaultGenerator implements Generator {
                 // NOTE: Don't use File.separator here as we write linux-style paths to FILES, and File.separator will
                 // result in incorrect match on Windows machines.
                 String relativeMeta = METADATA_DIR + "/VERSION";
-                filesToSort.sort(PathFileComparator.PATH_COMPARATOR);
+
+                final List<String> relativePaths = new ArrayList<>(filesToSort.size());
                 filesToSort.forEach(f -> {
                     // some Java implementations don't honor .relativize documentation fully.
                     // When outDir is /a/b and the input is /a/b/c/d, the result should be c/d.
@@ -2002,8 +2009,13 @@ public class DefaultGenerator implements Generator {
                         relativePath = relativePath.replace(File.separator, "/");
                     }
                     if (!relativePath.equals(relativeMeta)) {
-                        sb.append(relativePath).append(System.lineSeparator());
+                        relativePaths.add(relativePath);
                     }
+                });
+
+                Collections.sort(relativePaths, (a, b) -> IOCase.SENSITIVE.checkCompareTo(a,b));
+                relativePaths.forEach(relativePath -> {
+                    sb.append(relativePath).append(System.lineSeparator());
                 });
 
                 String targetFile = config.outputFolder() + File.separator + METADATA_DIR + File.separator + config.getFilesMetadataFilename();

@@ -31,9 +31,11 @@ These options may be applied as additional-properties (cli) or configOptions (pl
 |library|HTTP library template (sub-template) to use|<dl><dt>**generichost**</dt><dd>HttpClient with Generic Host dependency injection (https://docs.microsoft.com/en-us/dotnet/core/extensions/generic-host) (Experimental. Subject to breaking changes without notice.)</dd><dt>**httpclient**</dt><dd>HttpClient (https://docs.microsoft.com/en-us/dotnet/api/system.net.http.httpclient) (Experimental. Subject to breaking changes without notice.)</dd><dt>**unityWebRequest**</dt><dd>UnityWebRequest (...) (Experimental. Subject to breaking changes without notice.)</dd><dt>**restsharp**</dt><dd>RestSharp (https://github.com/restsharp/RestSharp)</dd></dl>|restsharp|
 |licenseId|The identifier of the license| |null|
 |modelPropertyNaming|Naming convention for the property: 'camelCase', 'PascalCase', 'snake_case' and 'original', which keeps the original name| |PascalCase|
+|modelPropertySorting|One of legacy, alphabetical, default.| |default|
 |netCoreProjectFile|Use the new format (.NET Core) for .NET project files (.csproj).| |false|
 |nonPublicApi|Generates code with reduced access modifiers; allows embedding elsewhere without exposing non-public API calls to consumers.| |false|
 |nullableReferenceTypes|Use nullable annotations in the project. Only supported on C# 8 / ASP.NET Core 3.1 or newer. Starting in .NET 6.0 the default is true.| |false|
+|operationParameterSorting|One of legacy, alphabetical, default.| |default|
 |optionalAssemblyInfo|Generate AssemblyInfo.cs.| |true|
 |optionalEmitDefaultValues|Set DataMember's EmitDefaultValue.| |false|
 |optionalMethodArgument|C# Optional method argument, e.g. void square(int x=10) (.net 4.0+ only).| |true|
@@ -49,6 +51,7 @@ These options may be applied as additional-properties (cli) or configOptions (pl
 |useCollection|Deserialize array types to Collection&lt;T&gt; instead of List&lt;T&gt;.| |false|
 |useDateTimeForDate|Use DateTime to model date properties even if DateOnly supported. (.net 6.0+ only)| |false|
 |useDateTimeOffset|Use DateTimeOffset to model date-time properties| |false|
+|useIntForTimeout|Use int for Timeout (fall back to v7.9.0 templates). This option (for restsharp only) will be deprecated so please migrated to TimeSpan instead.| |false|
 |useOneOfDiscriminatorLookup|Use the discriminator's mapping in oneOf to speed up the model lookup. IMPORTANT: Validation (e.g. one and only one match in oneOf's schemas) will be skipped.| |false|
 |useSourceGeneration|Use source generation where available (only `generichost` library supports this option).| |false|
 |validatable|Generates self-validatable models.| |true|

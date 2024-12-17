@@ -528,5 +528,17 @@ public class PythonClientCodegenTest {
                 .get(Paths.get(output.getAbsolutePath(), "openapi_client", "api", "hello_example_api.py").toString());
         assertNotNull(apiFile);
         assertFileContains(apiFile.toPath(), "_header_params['X-CUSTOM_CONSTANT_HEADER'] = 'CONSTANT_VALUE'");
+        assertFileContains(apiFile.toPath(), "_query_params.append(('CONSTANT_QUERY_STRING_KEY', 'CONSTANT_QUERY_STRING_VALUE'))");
+    }
+
+    @Test(description = "Enum value with quotes (#17582)")
+    public void testEnumPropertyWithQuotes() {
+        final PythonClientCodegen codegen = new PythonClientCodegen();
+
+        Assert.assertEquals(codegen.toEnumValue("enum-value", "string"), "'enum-value'");
+        Assert.assertEquals(codegen.toEnumValue("won't fix", "string"), "'won\\'t fix'");
+        Assert.assertEquals(codegen.toEnumValue("\"", "string"), "'\\\"'");
+        Assert.assertEquals(codegen.toEnumValue("1.0", "float"), "1.0");
+        Assert.assertEquals(codegen.toEnumValue("1", "int"), "1");
     }
 }

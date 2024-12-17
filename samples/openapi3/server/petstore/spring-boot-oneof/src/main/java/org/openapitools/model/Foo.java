@@ -23,7 +23,7 @@ import javax.annotation.Generated;
  */
 
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.7.0-SNAPSHOT")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.11.0-SNAPSHOT")
 public class Foo extends Entity implements FooRefOrValue {
 
   private String fooPropA;
@@ -49,7 +49,7 @@ public class Foo extends Entity implements FooRefOrValue {
   /**
    * Get fooPropA
    * @return fooPropA
-  */
+   */
   
   @Schema(name = "fooPropA", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("fooPropA")
@@ -69,7 +69,7 @@ public class Foo extends Entity implements FooRefOrValue {
   /**
    * Get fooPropB
    * @return fooPropB
-  */
+   */
   
   @Schema(name = "fooPropB", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("fooPropB")
@@ -161,7 +161,7 @@ public class Foo extends Entity implements FooRefOrValue {
     }
 
     protected Builder copyOf(Foo value) { 
-      super.copyOf(instance);
+      super.copyOf(value);
       this.instance.setFooPropA(value.fooPropA);
       this.instance.setFooPropB(value.fooPropB);
       return this;

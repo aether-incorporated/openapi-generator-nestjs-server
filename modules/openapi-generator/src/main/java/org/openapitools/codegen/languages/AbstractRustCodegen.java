@@ -2,7 +2,6 @@ package org.openapitools.codegen.languages;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
-import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.FileSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import org.openapitools.codegen.*;
@@ -148,8 +147,6 @@ public abstract class AbstractRustCodegen extends DefaultCodegen implements Code
 
     public enum CasingType {CAMEL_CASE, SNAKE_CASE}
 
-    ;
-
     /**
      * General purpose sanitizing function for Rust identifiers (fields, variables, structs, parameters, etc.).<br>
      * Rules for Rust are fairly simple:
@@ -248,8 +245,7 @@ public abstract class AbstractRustCodegen extends DefaultCodegen implements Code
         } else if (!org.apache.commons.lang3.StringUtils.isEmpty(p.get$ref())) {
             String datatype;
             try {
-                datatype = toModelName(ModelUtils.getSimpleRef(p.get$ref()));
-                datatype = "models::" + toModelName(datatype);
+                datatype = "models::" + toModelName(ModelUtils.getSimpleRef(p.get$ref()));
             } catch (Exception e) {
                 LOGGER.warn("Error obtaining the datatype from schema (model):{}. Datatype default to Object", p);
                 datatype = "Object";
@@ -441,6 +437,6 @@ public abstract class AbstractRustCodegen extends DefaultCodegen implements Code
         if (this.reservedWordsMappings().containsKey(name)) {
             return this.reservedWordsMappings().get(name);
         }
-        return "r#"+ name;
+        return "r#" + name;
     }
 }

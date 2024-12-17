@@ -17,6 +17,8 @@
 package org.openapitools.codegen.languages;
 
 import io.swagger.v3.oas.models.media.Schema;
+import lombok.Getter;
+import lombok.Setter;
 import org.openapitools.codegen.*;
 import org.openapitools.codegen.meta.GeneratorMetadata;
 import org.openapitools.codegen.meta.Stability;
@@ -56,13 +58,14 @@ public class TypeScriptNestjsClientCodegen extends AbstractTypeScriptClientCodeg
     public static final String USE_SINGLE_REQUEST_PARAMETER = "useSingleRequestParameter";
 
     protected String nestVersion = "8.0.0";
+    @Getter @Setter
     protected String npmRepository = null;
     protected String serviceSuffix = "Service";
     protected String serviceFileSuffix = ".service";
     protected String modelSuffix = "";
     protected String modelFileSuffix = "";
     protected String fileNaming = "camelCase";
-    protected Boolean stringEnums = false;
+    @Getter protected Boolean stringEnums = false;
 
     private boolean taggedUnions = false;
 
@@ -84,6 +87,8 @@ public class TypeScriptNestjsClientCodegen extends AbstractTypeScriptClientCodeg
         typeMapping.put("file", "Blob");
         apiPackage = "api";
         modelPackage = "model";
+
+        reservedWords.addAll(Arrays.asList("from", "headers"));
 
         this.cliOptions.add(new CliOption(NPM_REPOSITORY,
                 "Use this property to set an url your private npmRepo in the package.json"));
@@ -218,10 +223,6 @@ public class TypeScriptNestjsClientCodegen extends AbstractTypeScriptClientCodeg
         stringEnums = value;
     }
 
-    public Boolean getStringEnums() {
-        return stringEnums;
-    }
-
     @Override
     public boolean isDataTypeFile(final String dataType) {
         return "Blob".equals(dataType);
@@ -328,6 +329,10 @@ public class TypeScriptNestjsClientCodegen extends AbstractTypeScriptClientCodeg
 
             // Overwrite path to TypeScript template string, after applying everything we just did.
             op.path = pathBuffer.toString();
+
+            for (CodegenParameter param : op.allParams) {
+                param.vendorExtensions.putIfAbsent("x-param-has-sanitized-name", !param.baseName.equals(param.paramName));
+            }
         }
 
         operations.put("hasSomeFormParams", hasSomeFormParams);
@@ -452,14 +457,6 @@ public class TypeScriptNestjsClientCodegen extends AbstractTypeScriptClientCodeg
         return modelPackage() + "/" + toModelFilename(name);
     }
 
-    public String getNpmRepository() {
-        return npmRepository;
-    }
-
-    public void setNpmRepository(String npmRepository) {
-        this.npmRepository = npmRepository;
-    }
-
     private String getApiFilenameFromClassname(String classname) {
         String name = classname.substring(0, classname.length() - serviceSuffix.length());
         return toApiFilename(name);
@@ -550,6 +547,4 @@ public class TypeScriptNestjsClientCodegen extends AbstractTypeScriptClientCodeg
         }
         return name;
     }
-
 }
-

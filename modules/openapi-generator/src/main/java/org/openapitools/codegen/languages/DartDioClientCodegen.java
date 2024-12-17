@@ -19,11 +19,11 @@ package org.openapitools.codegen.languages;
 import com.google.common.collect.Sets;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Template;
-import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.openapitools.codegen.*;
 import org.openapitools.codegen.CodegenDiscriminator.MappedModel;
 import org.openapitools.codegen.api.TemplatePathLocator;
@@ -73,9 +73,12 @@ public class DartDioClientCodegen extends AbstractDartCodegen {
 
     private static final String CLIENT_NAME = "clientName";
 
+    @Getter @Setter
     private String dateLibrary;
+    @Getter @Setter
     private String equalityCheckMethod;
 
+    @Getter @Setter
     private String clientName;
 
     private TemplateManager templateManager;
@@ -137,30 +140,6 @@ public class DartDioClientCodegen extends AbstractDartCodegen {
         cliOptions.add(finalProperties);
     }
 
-    public String getDateLibrary() {
-        return dateLibrary;
-    }
-
-    public void setDateLibrary(String library) {
-        this.dateLibrary = library;
-    }
-
-    public String getEqualityCheckMethod() {
-        return equalityCheckMethod;
-    }
-
-    public void setEqualityCheckMethod(String equalityCheckMethod) {
-        this.equalityCheckMethod = equalityCheckMethod;
-    }
-
-    public String getClientName() {
-        return clientName;
-    }
-
-    public void setClientName(String clientName) {
-        this.clientName = clientName;
-    }
-
     @Override
     public String getName() {
         return "dart-dio";
@@ -174,11 +153,6 @@ public class DartDioClientCodegen extends AbstractDartCodegen {
     @Override
     public void processOpts() {
         super.processOpts();
-
-        if (StringUtils.isEmpty(System.getenv("DART_POST_PROCESS_FILE"))) {
-            LOGGER.info("Environment variable DART_POST_PROCESS_FILE not defined so the Dart code may not be properly formatted. To define it, try `export DART_POST_PROCESS_FILE=\"/usr/local/bin/dartfmt -w\"` (Linux/Mac)");
-            LOGGER.info("NOTE: To enable file post-processing, 'enablePostProcessFile' must be set to `true` (--enable-post-process-file for CLI).");
-        }
 
         if (!additionalProperties.containsKey(CodegenConstants.SERIALIZATION_LIBRARY)) {
             additionalProperties.put(CodegenConstants.SERIALIZATION_LIBRARY, SERIALIZATION_LIBRARY_DEFAULT);
@@ -790,13 +764,13 @@ public class DartDioClientCodegen extends AbstractDartCodegen {
 
         final boolean isArray;
 
-        final boolean uniqueItems;
+        @Getter final boolean uniqueItems;
 
         final boolean isMap;
 
         final boolean isNullable;
 
-        final String dataType;
+        @Getter final String dataType;
 
         private BuiltValueSerializer(boolean isArray, boolean uniqueItems, boolean isMap, boolean isNullable, String dataType) {
             this.isArray = isArray;
@@ -810,20 +784,12 @@ public class DartDioClientCodegen extends AbstractDartCodegen {
             return isArray;
         }
 
-        public boolean isUniqueItems() {
-            return uniqueItems;
-        }
-
         public boolean isMap() {
             return isMap;
         }
 
         public boolean isNullable() {
             return isNullable;
-        }
-
-        public String getDataType() {
-            return dataType;
         }
 
         @Override

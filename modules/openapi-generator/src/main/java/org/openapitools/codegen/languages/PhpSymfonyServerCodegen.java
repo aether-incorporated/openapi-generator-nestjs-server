@@ -17,8 +17,9 @@
 
 package org.openapitools.codegen.languages;
 
-import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.openapitools.codegen.*;
 import org.openapitools.codegen.meta.features.*;
@@ -48,10 +49,10 @@ public class PhpSymfonyServerCodegen extends AbstractPhpCodegen implements Codeg
     protected String testsPackage;
     protected String apiTestsPackage;
     protected String modelTestsPackage;
-    protected String composerVendorName = "openapi";
-    protected String composerProjectName = "server-bundle";
+    @Setter protected String composerVendorName = "openapi";
+    @Setter protected String composerProjectName = "server-bundle";
     protected String testsDirName = "Tests";
-    protected String bundleName;
+    @Getter protected String bundleName;
     protected String bundleClassName;
     protected String bundleExtensionName;
     protected String bundleAlias;
@@ -60,7 +61,7 @@ public class PhpSymfonyServerCodegen extends AbstractPhpCodegen implements Codeg
     protected String controllerPackage;
     protected String controllerTestsPackage;
     protected String servicePackage;
-    protected Boolean phpLegacySupport = Boolean.TRUE;
+    @Setter protected Boolean phpLegacySupport = Boolean.TRUE;
 
     protected HashSet<String> typeHintable;
 
@@ -212,10 +213,6 @@ public class PhpSymfonyServerCodegen extends AbstractPhpCodegen implements Codeg
         cliOptions.add(new CliOption(PHP_LEGACY_SUPPORT, "Should the generated code be compatible with PHP 5.x?").defaultValue(Boolean.TRUE.toString()));
     }
 
-    public String getBundleName() {
-        return bundleName;
-    }
-
     public void setBundleName(String bundleName) {
         this.bundleName = bundleName;
         this.bundleClassName = bundleName + "Bundle";
@@ -230,21 +227,8 @@ public class PhpSymfonyServerCodegen extends AbstractPhpCodegen implements Codeg
         }
     }
 
-    public void setPhpLegacySupport(Boolean support) {
-        this.phpLegacySupport = support;
-    }
-
     public String controllerFileFolder() {
         return (outputFolder + File.separator + toSrcPath(controllerPackage, srcBasePath));
-    }
-
-    @Override
-    public String escapeText(String input) {
-        if (input != null) {
-            // Trim the string to avoid leading and trailing spaces.
-            return super.escapeText(input).trim();
-        }
-        return input;
     }
 
     @Override
@@ -492,6 +476,7 @@ public class PhpSymfonyServerCodegen extends AbstractPhpCodegen implements Codeg
      * @param name the name of the property
      * @return getter name based on naming convention
      */
+    @Override
     public String toBooleanGetter(String name) {
         return "is" + getterAndSetterCapitalize(name);
     }
@@ -512,14 +497,6 @@ public class PhpSymfonyServerCodegen extends AbstractPhpCodegen implements Codeg
     @Override
     public String modelTestFileFolder() {
         return (outputFolder + File.separator + toSrcPath(modelTestsPackage, srcBasePath));
-    }
-
-    public void setComposerVendorName(String composerVendorName) {
-        this.composerVendorName = composerVendorName;
-    }
-
-    public void setComposerProjectName(String composerProjectName) {
-        this.composerProjectName = composerProjectName;
     }
 
     @Override
@@ -591,15 +568,6 @@ public class PhpSymfonyServerCodegen extends AbstractPhpCodegen implements Codeg
         }
     }
 
-    @Override
-    public String toEnumValue(String value, String datatype) {
-        if ("int".equals(datatype) || "float".equals(datatype)) {
-            return value;
-        } else {
-            return "\"" + escapeText(value) + "\"";
-        }
-    }
-
     /**
      * Return the regular expression/JSON schema pattern (http://json-schema.org/latest/json-schema-validation.html#anchor33)
      *
@@ -611,6 +579,7 @@ public class PhpSymfonyServerCodegen extends AbstractPhpCodegen implements Codeg
         return escapeText(pattern);
     }
 
+    @Override
     public String toApiName(String name) {
         if (name.isEmpty()) {
             return "DefaultApiInterface";

@@ -17,10 +17,9 @@
 
 package org.openapitools.codegen.utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import io.swagger.v3.core.util.AnnotationsUtils;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -46,10 +45,10 @@ import org.openapitools.codegen.model.ModelsMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -64,6 +63,9 @@ public class ModelUtils {
 
     private static final String URI_FORMAT = "uri";
 
+    // These types are for 3.0.x only; 3.1 also has a `null` type as well
+    private static final Set<String> OPENAPI_TYPES = Set.of("array", "integer", "number", "boolean", "string", "object");
+
     private static final String generateAliasAsModelKey = "generateAliasAsModel";
 
     // A vendor extension to track the value of the 'swagger' field in a 2.0 doc, if applicable.
@@ -76,16 +78,10 @@ public class ModelUtils {
 
     private static final ObjectMapper JSON_MAPPER;
     private static final ObjectMapper YAML_MAPPER;
-    private static final ObjectMapper TYPED_JSON_MAPPER = new ObjectMapper();
 
     static {
         JSON_MAPPER = ObjectMapperFactory.createJson();
         YAML_MAPPER = ObjectMapperFactory.createYaml();
-
-        BasicPolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
-                .allowIfSubType(Object.class)
-                .build();
-        TYPED_JSON_MAPPER.activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.EVERYTHING);
     }
 
     public static boolean isDisallowAdditionalPropertiesIfNotPresent() {
@@ -400,11 +396,7 @@ public class ModelUtils {
             return null;
         }
 
-        try {
-            ref = URLDecoder.decode(ref, "UTF-8");
-        } catch (UnsupportedEncodingException ignored) {
-            once(LOGGER).warn("Found UnsupportedEncodingException: {}", ref);
-        }
+        ref = URLDecoder.decode(ref, StandardCharsets.UTF_8);
 
         // see https://tools.ietf.org/html/rfc6901#section-3
         // Because the characters '~' (%x7E) and '/' (%x2F) have special meanings in
@@ -572,7 +564,7 @@ public class ModelUtils {
         }
 
         if (schema instanceof JsonSchema) { // 3.1 spec
-            return ((schema.getAdditionalProperties() instanceof JsonSchema) ||
+            return ((schema.getAdditionalProperties() instanceof Schema) ||
                     (schema.getAdditionalProperties() instanceof Boolean && (Boolean) schema.getAdditionalProperties()));
         } else { // 3.0 or 2.x spec
             return (schema instanceof MapSchema) ||
@@ -608,7 +600,9 @@ public class ModelUtils {
         Schema<?> items = schema.getItems();
         if (items == null) {
             if (schema instanceof JsonSchema) { // 3.1 spec
-                // do nothing as the schema may contain prefixItems only
+                // set the items to a new schema (any type)
+                items = new Schema<>();
+                schema.setItems(items);
             } else { // 3.0 spec, default to string
                 LOGGER.error("Undefined array inner type for `{}`. Default to String.", schema.getName());
                 items = new StringSchema().description("TODO default missing array inner type to string");
@@ -620,6 +614,16 @@ public class ModelUtils {
 
     public static boolean isSet(Schema schema) {
         return ModelUtils.isArraySchema(schema) && Boolean.TRUE.equals(schema.getUniqueItems());
+    }
+
+    /**
+     * Return true if the schema is a string/integer/number/boolean type in OpenAPI.
+     *
+     * @param schema the OAS schema
+     * @return true if the schema is a string/integer/number/boolean type in OpenAPI.
+     */
+    public static boolean isPrimitiveType(Schema schema) {
+        return (isStringSchema(schema) || isIntegerSchema(schema) || isNumberSchema(schema) || isBooleanSchema(schema));
     }
 
     public static boolean isStringSchema(Schema schema) {
@@ -853,9 +857,10 @@ public class ModelUtils {
      *         The value can be any type except the 'null' value.
      *
      * @param schema  potentially containing a '$ref'
+     * @param openAPI  document containing the Schema.
      * @return true if it's a free-form object
      */
-    public static boolean isFreeFormObject(Schema schema) {
+    public static boolean isFreeFormObject(Schema schema, OpenAPI openAPI) {
         if (schema == null) {
             // TODO: Is this message necessary? A null schema is not a free-form object, so the result is correct.
             once(LOGGER).error("Schema cannot be null in isFreeFormObject check");
@@ -914,6 +919,8 @@ public class ModelUtils {
                 if (addlProps == null) {
                     return true;
                 } else {
+                    addlProps = getReferencedSchema(openAPI, addlProps);
+
                     if (addlProps instanceof ObjectSchema) {
                         ObjectSchema objSchema = (ObjectSchema) addlProps;
                         // additionalProperties defined as {}
@@ -960,7 +967,7 @@ public class ModelUtils {
      * @param schema  potentially containing a '$ref'
      * @return schema without '$ref'
      */
-    public static Schema getReferencedSchema(OpenAPI openAPI, Schema schema) {
+    public static Schema<?> getReferencedSchema(OpenAPI openAPI, Schema schema) {
         if (schema == null) {
             return null;
         }
@@ -2024,6 +2031,18 @@ public class ModelUtils {
         return false;
     }
 
+
+    /**
+     * Returns true if the schema contains allOf with a single item but
+     * no properties/oneOf/anyOf defined
+     *
+     * @param schema the schema
+     * @return true if the schema contains allOf but no properties/oneOf/anyOf defined.
+     */
+    public static boolean isAllOfWithSingleItem(Schema schema) {
+        return (isAllOf(schema) && schema.getAllOf().size() == 1);
+    }
+
     /**
      * Returns true if the schema contains allOf and may or may not have
      * properties/oneOf/anyOf defined.
@@ -2137,7 +2156,7 @@ public class ModelUtils {
         }
 
         if (schema instanceof JsonSchema) {
-            if (schema.getTypes() != null) {
+            if (schema.getTypes() != null && !schema.getTypes().isEmpty()) {
                 return String.valueOf(schema.getTypes().iterator().next());
             } else {
                 return null;
@@ -2186,14 +2205,112 @@ public class ModelUtils {
         return false;
     }
 
-    public static Schema cloneSchema(Schema schema) {
-        try {
-            String json = TYPED_JSON_MAPPER.writeValueAsString(schema);
-            return TYPED_JSON_MAPPER.readValue(json, schema.getClass());
-        } catch (JsonProcessingException ex) {
-            LOGGER.error("Can't clone schema {}", schema, ex);
-            return schema;
+    public static Schema cloneSchema(Schema schema, boolean openapi31) {
+        if (openapi31) {
+            return AnnotationsUtils.clone(schema, openapi31);
+        } else {
+            // AnnotationsUtils.clone doesn't support custom schema types for OpenAPI < 3.1
+            String schemaType = schema.getType();
+            if (schemaType != null && !OPENAPI_TYPES.contains(schemaType)) {
+                schema.setType(null);
+            }
+            Schema result = AnnotationsUtils.clone(schema, openapi31);
+            schema.setType(schemaType);
+            result.setType(schemaType);
+            return result;
         }
+    }
+
+    /**
+     * Check if the schema is of type 'null' or schema itself is pointing to null
+     * <p>
+     * Return true if the schema's type is 'null' or not specified
+     *
+     * @param schema Schema
+     * @param openAPI OpenAPI
+     *
+     * @return true if schema is null type
+     */
+    public static boolean isNullTypeSchema(OpenAPI openAPI, Schema schema) {
+        if (schema == null) {
+            return true;
+        }
+
+        // dereference the schema
+        schema = ModelUtils.getReferencedSchema(openAPI, schema);
+
+        // allOf/anyOf/oneOf
+        if (ModelUtils.hasAllOf(schema) || ModelUtils.hasOneOf(schema) || ModelUtils.hasAnyOf(schema)) {
+            return false;
+        }
+
+        // schema with properties
+        if (schema.getProperties() != null) {
+            return false;
+        }
+
+        // convert referenced enum of null only to `nullable:true`
+        if (schema.getEnum() != null && schema.getEnum().size() == 1) {
+            if ("null".equals(String.valueOf(schema.getEnum().get(0)))) {
+                return true;
+            }
+        }
+
+        if (schema.getTypes() != null && !schema.getTypes().isEmpty()) {
+            // 3.1 spec
+            if (schema.getTypes().size() == 1) { // 1 type only
+                String type = (String) schema.getTypes().iterator().next();
+                return type == null || "null".equals(type);
+            } else { // more than 1 type so must not be just null
+                return false;
+            }
+        }
+
+        if (schema instanceof JsonSchema) { // 3.1 spec
+            if (Boolean.TRUE.equals(schema.getNullable())) {
+                return true;
+            }
+
+            // for `type: null`
+            if (schema.getTypes() == null && schema.get$ref() == null) {
+                return true;
+            }
+        } else { // 3.0.x or 2.x spec
+            if ((schema.getType() == null || schema.getType().equals("null")) && schema.get$ref() == null) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if the schema is supported by OpenAPI Generator.
+     * <p>
+     * Return true if the schema can be handled by OpenAPI Generator
+     *
+     * @param schema Schema
+     * @param openAPI OpenAPIs
+     *
+     * @return true if schema is null type
+     */
+    public static boolean isUnsupportedSchema(OpenAPI openAPI, Schema schema) {
+        if (schema == null) {
+            return true;
+        }
+
+        // dereference the schema
+        schema = ModelUtils.getReferencedSchema(openAPI, schema);
+
+        if (schema.getTypes() == null && hasValidation(schema))  {
+            // just validation without type
+            return true;
+        } else if (schema.getIf() != null && schema.getThen() != null) {
+            // if, then in 3.1 spec
+            return true;
+        }
+
+        return false;
     }
 
     @FunctionalInterface

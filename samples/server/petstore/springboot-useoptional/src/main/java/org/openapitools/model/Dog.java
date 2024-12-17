@@ -24,7 +24,7 @@ import javax.annotation.Generated;
  */
 
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.7.0-SNAPSHOT")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", comments = "Generator version: 7.11.0-SNAPSHOT")
 public class Dog extends Animal {
 
   private Optional<String> breed = Optional.empty();
@@ -48,7 +48,7 @@ public class Dog extends Animal {
   /**
    * Get breed
    * @return breed
-  */
+   */
   
   @ApiModelProperty(value = "")
   @JsonProperty("breed")
@@ -123,7 +123,7 @@ public class Dog extends Animal {
     }
 
     protected Builder copyOf(Dog value) { 
-      super.copyOf(instance);
+      super.copyOf(value);
       this.instance.setBreed(value.breed);
       return this;
     }
