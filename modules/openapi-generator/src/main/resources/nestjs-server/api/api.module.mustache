@@ -13,7 +13,7 @@ import { {{ classname }}ApiImplementation, {{ classname }}ApiImplementationModul
         // To do that, we need to provide the injected service in place of its parent service
         {
             provide: {{ classname }}Api,
-            useClass: {{ classname }}ApiImplementation,
+            useExisting: {{ classname }}ApiImplementation,
         }
     ],
 })

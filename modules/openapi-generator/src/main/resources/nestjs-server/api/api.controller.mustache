@@ -41,7 +41,7 @@ import * as {{ classname }}Types from './{{ apiFilename }}.types';
 @Controller()
 export class {{ classname }}Controller {
 
-    constructor(private _{{#lambda.camelcase}}{{ classname }}Service{{/lambda.camelcase}}: {{ classname }}Service) {}
+    constructor(private _{{#lambda.camelcase}}{{ classname }}Api{{/lambda.camelcase}}: {{ classname }}Api) {}
 
     {{#operations}}
     {{#operation}}
@@ -101,7 +101,7 @@ export class {{ classname }}Controller {
         const payload = undefined;
         {{/hasFormParams}}{{/hasBodyParam}}
 
-        return await this._{{#lambda.camelcase}}{{ classname }}Service{{/lambda.camelcase}}.{{operationId}}({
+        return await this._{{#lambda.camelcase}}{{ classname }}Api{{/lambda.camelcase}}.{{operationId}}({
             payload,
             headers{{^hasHeaderParams}}: undefined{{/hasHeaderParams}},
             queryParams{{^hasQueryParams}}: undefined{{/hasQueryParams}},
