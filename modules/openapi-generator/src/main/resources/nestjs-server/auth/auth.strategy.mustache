@@ -1,0 +1,19 @@
+/**
+ * Contains the auth strategy definitions.
+ * Override this file with custom strategy implementations and configurations.
+ * This file should be marked as ignore in the .openapi-generator-ignore file if changes are made.
+ */
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+
+{{#hasAuthMethods}}
+import { {{#authMethods}}{{#lambda.uppercase}}{{#lambda.snakecase}}AUTH_KEY_{{name}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{^-last}}, {{/-last}}{{/authMethods}}} from './auth.types';
+{{/hasAuthMethods}}
+
+{{#authMethods}}
+@Injectable()
+export class {{#lambda.pascalcase}}{{name}}{{/lambda.pascalcase}}Strategy extends PassportStrategy({{#lambda.uppercase}}{{#lambda.snakecase}}AUTH_KEY_{{name}}{{/lambda.snakecase}}{{/lambda.uppercase}}) {}
+
+{{/authMethods}}

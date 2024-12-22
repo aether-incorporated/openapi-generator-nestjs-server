@@ -1,0 +1,19 @@
+/*eslint-disable*/
+import { Module } from '@nestjs/common';
+
+{{#apiInfo}}
+{{#apis}}
+import { {{classname}}Module } from './{{apiFilename}}/{{apiFilename}}.module';
+{{/apis}}
+{{/apiInfo}}
+
+@Module({
+    imports: [
+        {{#apiInfo}}
+        {{#apis}}
+        {{classname}}Module,
+        {{/apis}}
+        {{/apiInfo}}
+    ],
+})
+export class ApiModule {}

@@ -1,0 +1,20 @@
+/*eslint-disable*/
+import { Module } from '@nestjs/common';
+
+import { {{ classname }}Controller } from './{{ apiFilename }}.controller';
+import { {{ classname }}Api } from './{{ apiFilename }}.api';
+import { {{ classname }}ApiImplementation, {{ classname }}ApiImplementationModule } from './{{ apiFilename }}.implementation';
+
+@Module({
+    imports: [{{ classname }}ApiImplementationModule],
+    controllers: [{{ classname }}Controller],
+    providers: [
+        // We want to use the api implementation provided by its module, rather than the base class.
+        // To do that, we need to provide the injected service in place of its parent service
+        {
+            provide: {{ classname }}Api,
+            useClass: {{ classname }}ApiImplementation,
+        }
+    ],
+})
+export class {{classname}}Module {}

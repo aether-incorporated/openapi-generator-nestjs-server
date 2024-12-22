@@ -1,0 +1,109 @@
+/*eslint-disable*/
+{{>license-info}}
+import { Expose, Transform } from 'class-transformer';
+import { IsArray, IsBoolean, IsDateString, IsEnum, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+
+{{#imports}}
+import { {{ classname }} } from '../{{ filename }}';
+{{/imports}}
+import { ServiceContext } from '../types'
+{{#operations}}
+{{#operation}}
+
+/* NOTE: Cookies are not currently supported. It would be a relatively simple addition, following: https://docs.nestjs.com/techniques/cookies. Development effort is needed */
+
+/**
+ * ---------------------------------------
+ * {{operationId}}
+ * ---------------------------------------
+ */
+ {{#hasFormParams}}
+
+/**
+ * Form params (@Body) for the {{ operationId }} handler (without file params)
+ */
+export class {{ operationIdCamelCase }}FormParams {
+    {{#formParams}}
+    {{^isFile}}
+    {{#lambda.indented}}{{>api/param-data}}{{/lambda.indented}}
+    {{/isFile}}
+    {{/formParams}}
+}
+{{/hasFormParams}}
+{{#hasHeaderParams}}
+
+/**
+ * Header params for the {{ operationId }} handler
+ */
+export class {{ operationIdCamelCase }}Headers {
+    {{#headerParams}}
+    
+    @Expose({ name: '{{{baseName}}}' })
+    {{#lambda.indented}}{{>api/param-data}}{{/lambda.indented}}
+    {{/headerParams}}
+}
+{{/hasHeaderParams}}
+{{#hasQueryParams}}
+
+/**
+ * Query params for the {{ operationId }} handler
+ */
+export class {{ operationIdCamelCase }}Query {
+    {{#queryParams}}
+    
+    {{#lambda.indented}}{{>api/param-data}}{{/lambda.indented}}
+    {{/queryParams}}
+}
+{{/hasQueryParams}}
+{{#hasPathParams}}
+
+/**
+ * Path params for the {{ operationId }} handler
+ */
+export class {{ operationIdCamelCase }}PathParams {
+    {{#pathParams}}
+
+    {{#lambda.indented}}{{>api/param-data}}{{/lambda.indented}}
+    {{/pathParams}}
+}
+{{/hasPathParams}}
+
+// TODO -- need to handle form / file slightly specially..
+
+export type {{ operationIdCamelCase }}Context = ServiceContext<
+{{#hasBodyParam}}
+{{#bodyParams.0}}
+    {{{dataType}}},
+{{/bodyParams.0}}
+{{/hasBodyParam}}
+{{#hasFormParams}}
+    {
+        {{#formParams}}
+        {{paramName}}: {{{dataType}}};
+        {{/formParams}}
+    },
+{{/hasFormParams}}
+{{^hasBodyOrFormParams}}
+    undefined,
+{{/hasBodyOrFormParams}}
+{{#hasHeaderParams}}
+    {{ operationIdCamelCase }}Headers,
+{{/hasHeaderParams}}
+{{^hasHeaderParams}}
+    undefined,
+{{/hasHeaderParams}}
+{{#hasQueryParams}}
+    {{ operationIdCamelCase }}Query,
+{{/hasQueryParams}}
+{{^hasQueryParams}}
+    undefined,
+{{/hasQueryParams}}
+{{#hasPathParams}}
+    {{ operationIdCamelCase }}PathParams
+{{/hasPathParams}}
+{{^hasPathParams}}
+    undefined
+{{/hasPathParams}}
+>;
+{{/operation}}
+{{/operations}}

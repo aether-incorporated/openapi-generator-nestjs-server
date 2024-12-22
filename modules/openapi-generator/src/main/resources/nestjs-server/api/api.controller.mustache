@@ -1,0 +1,118 @@
+/*eslint-disable*/
+{{>license-info}}
+import {
+    Body,
+    Controller,
+    DefaultValuePipe,
+    Delete,
+    Get,
+    Header,
+    Headers,
+    HttpCode,
+    HttpStatus,
+    Param,
+    ParseIntPipe,
+    Patch,
+    Post,
+    Put,
+    Query,
+    Request,
+    Response,
+    UseInterceptors,
+} from '@nestjs/common';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import accepts from 'accepts';
+
+{{#hasAuthMethods}}
+import { {{#authMethods}}{{#lambda.pascalcase}}{{name}}{{/lambda.pascalcase}}{{^-last}}, {{/-last}}{{/authMethods}} } from '../../auth/auth.decorator';
+{{/hasAuthMethods}}
+{{#imports}}
+import { {{ classname }} } from '../{{ filename }}';
+{{/imports}}
+import { {{ classname }}Api } from './{{ apiFilename }}.api';
+import * as {{ classname }}Types from './{{ apiFilename }}.types';
+
+/**
+ * NOTE: Controllers do not currently support XML as a request content-type
+ * To support this consider adding custom middleware, 
+ * e.g. https://stackoverflow.com/questions/63994341/nestjs-accepting-multiple-mime-types-in-request-body 
+ */
+
+@Controller()
+export class {{ classname }}Controller {
+
+    constructor(private _{{#lambda.camelcase}}{{ classname }}Service{{/lambda.camelcase}}: {{ classname }}Service) {}
+
+    {{#operations}}
+    {{#operation}}
+    /**
+    {{#description}}
+     * {{{.}}}
+    {{/description}}
+    {{#notes}}
+     * {{{.}}}
+    {{/notes}}
+     */
+    @{{#lambda.titlecase}}{{httpMethod}}{{/lambda.titlecase}}('{{path}}'){{#authMethods}}
+    @{{#lambda.pascalcase}}{{name}}{{/lambda.pascalcase}}({{#isOAuth}}{{#scopes}}'{{{scope}}}'{{^-last}}, {{/-last}}{{/scopes}}{{/isOAuth}}){{^-last}}
+    {{/-last}}{{/authMethods}}{{#isMultipart}}
+    @UseInterceptors(AnyFilesInterceptor()){{/isMultipart}}
+    async {{operationId}}(
+    {{#hasBodyParam}}
+    {{#bodyParams.0}}
+        @Body() body: {{{dataType}}},
+    {{/bodyParams.0}}
+    {{/hasBodyParam}}
+    {{#hasFormParams}}
+        @Body() formBody: any,
+    {{/hasFormParams}}
+    {{#hasHeaderParams}}
+        // NOTE: Header validation does not currently work. Need to add a custom decorator for this. See https://stackoverflow.com/questions/66911356/create-a-header-custom-validation-with-nestjs-and-class-validator
+        @Headers() headers: {{ classname }}Types.{{ operationIdCamelCase }}Headers,
+    {{/hasHeaderParams}}
+    {{#hasQueryParams}}
+        @Query() queryParams: {{ classname }}Types.{{ operationIdCamelCase }}Query,
+    {{/hasQueryParams}}
+    {{#hasPathParams}}
+        @Param() pathParams: {{ classname }}Types.{{ operationIdCamelCase }}PathParams,
+    {{/hasPathParams}}
+        @Request() request: any,
+        @Response({ passthrough: true }) response: any
+    ) {
+        {{#hasProduces}}
+        // Pull the correct content type from the 'Accepts' header
+        const contentType = accepts(request)?.type({{#produces}}'{{{mediaType}}}'{{^-last}}, {{/-last}}{{/produces}});
+        if (!contentType) {
+            response.status(HttpStatus.NOT_ACCEPTABLE);
+            return;
+        }
+        response.type(contentType);
+        {{/hasProduces}}
+
+        // TODO -- loop through responses and set header(s) here??, (hasResponseHeaders) 
+        {{#hasBodyParam}}
+        const payload = body;
+        {{/hasBodyParam}}
+        {{#hasFormParams}}
+        const payload = formBody;
+        // TODO -- check for files and add those as well
+        {{/hasFormParams}}
+        {{^hasBodyParam}}{{^hasFormParams}}
+        const payload = undefined;
+        {{/hasFormParams}}{{/hasBodyParam}}
+
+        return await this._{{#lambda.camelcase}}{{ classname }}Service{{/lambda.camelcase}}.{{operationId}}({
+            payload,
+            headers{{^hasHeaderParams}}: undefined{{/hasHeaderParams}},
+            queryParams{{^hasQueryParams}}: undefined{{/hasQueryParams}},
+            pathParams{{^hasPathParams}}: undefined{{/hasPathParams}},
+            request,
+            response,
+        });
+    }
+
+    {{/operation}}
+    {{/operations}}
+
+    /** If we have multipart/form-data AND files, need multer: https://docs.nestjs.com/techniques/file-upload. Files are BINARY format strings */
+}

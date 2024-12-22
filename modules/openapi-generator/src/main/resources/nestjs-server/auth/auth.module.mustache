@@ -1,0 +1,20 @@
+import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtModule } from '@nestjs/jwt';
+import { AggregateAuthGuard{{#authMethods}}, {{#lambda.pascalcase}}{{name}}{{/lambda.pascalcase}}Guard{{/authMethods}} } from './auth.guard';
+{{#hasAuthMethods}}
+import { {{#authMethods}}{{#lambda.pascalcase}}{{name}}{{/lambda.pascalcase}}Strategy{{^-last}}, {{/-last}}{{/authMethods}} } from './auth.strategy';
+{{/hasAuthMethods}}
+
+@Module({
+    imports: [JwtModule.register({})],
+    providers: [
+        {
+            provide: APP_GUARD,
+            useClass: AggregateAuthGuard,
+        },{{#authMethods}}
+        {{#lambda.pascalcase}}{{name}}Guard,{{/lambda.pascalcase}},{{/authMethods}}{{#authMethods}}
+        {{#lambda.pascalcase}}{{name}}Strategy,{{/lambda.pascalcase}},{{/authMethods}}        
+    ],
+})
+export class AuthModule {}

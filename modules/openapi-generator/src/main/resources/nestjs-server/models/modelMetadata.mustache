@@ -1,0 +1,47 @@
+{{#description}}
+/**
+ * {{{.}}}
+ */
+{{/description}}
+{{#required}}
+@IsNotEmpty()
+{{/required}}
+{{^required}}
+@IsOptional()
+{{/required}}
+{{#isString}}
+@IsString()
+{{/isString}}
+{{#isNumeric}}
+@IsNumber()
+{{/isNumeric}}
+{{#isBoolean}}
+@IsBoolean()
+{{/isBoolean}}
+{{#isDate}}
+@IsDateString()
+{{/isDate}}
+{{#isDateTime}}
+@IsDateString()
+{{/isDateTime}}
+{{#isArray}}
+@IsArray()
+{{/isArray}}
+{{#isEnum}}
+@IsEnum({{{datatypeWithEnum}}})
+{{/isEnum}}
+{{^isPrimitiveType}}
+{{#isArray}}
+{{^items.isPrimitiveType}}
+@ValidateNested({ each: true })
+@Type(() => {{items.dataType}})
+{{/items.isPrimitiveType}}
+{{/isArray}}
+{{^isArray}}
+{{^isEnumRef}}
+@ValidateNested({ each: true })
+@Type(() => {{dataType}})
+{{/isEnumRef}}
+{{/isArray}}
+{{/isPrimitiveType}}
+@Expose()
