@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 
 {{#apiInfo}}
 {{#apis}}
-import { {{classname}}Module } from './{{apiFilename}}/{{apiFilename}}.module';
+import { {{classname}}ApiModule } from './{{apiFilename}}/{{apiFilename}}-api.module';
 {{/apis}}
 {{/apiInfo}}
 
@@ -11,7 +11,7 @@ import { {{classname}}Module } from './{{apiFilename}}/{{apiFilename}}.module';
     imports: [
         {{#apiInfo}}
         {{#apis}}
-        {{classname}}Module,
+        {{classname}}ApiModule,
         {{/apis}}
         {{/apiInfo}}
     ],

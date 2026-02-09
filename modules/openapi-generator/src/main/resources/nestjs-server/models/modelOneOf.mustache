@@ -1,7 +1,7 @@
 {{#hasImports}}
 import {
     {{#imports}}
-    {{{.}}},
+    {{{.}}}Schema,
     {{/imports}}
 } from './';
 
@@ -11,4 +11,6 @@ import {
  * {{{.}}}{{/description}}
  * @export
  */
-export type {{classname}} = {{#oneOf}}{{{.}}}{{^-last}} | {{/-last}}{{/oneOf}};
+export const {{classname}}Schema = z.union([{{#oneOf}}{{{.}}}Schema{{^-last}}, {{/-last}}{{/oneOf}}]);
+
+export type {{classname}} = z.infer<typeof {{classname}}Schema>;

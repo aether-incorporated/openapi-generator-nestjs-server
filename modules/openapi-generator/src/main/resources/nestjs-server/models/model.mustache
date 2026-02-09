@@ -1,11 +1,10 @@
 {{>license-info}}
 {{#models}}
 {{#model}}
-import { Expose, Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { z } from 'zod';
 
 {{#tsImports}}
-import { {{classname}} } from '{{filename}}';
+import { {{classname}}, {{classname}}Schema } from '{{filename}}';
 {{/tsImports}}
 
 {{#description}}

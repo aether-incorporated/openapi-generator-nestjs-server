@@ -1,9 +1,10 @@
 {{>models/modelGenericEnums}}
-export class {{classname}}{{#allParents}}{{#-first}} extends {{/-first}}{{{.}}}{{^-last}}, {{/-last}}{{/allParents}} {
-{{>models/modelGenericAdditionalProperties}}
-{{#vars}}
-    {{#lambda.indented}}{{>models/modelMetadata}}{{/lambda.indented}}
-    {{#isReadOnly}}readonly {{/isReadOnly}}{{{name}}}{{#required}}!{{/required}}{{^required}}?{{/required}}: {{#isEnum}}{{{datatypeWithEnum}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}{{#isNullable}} | null{{/isNullable}}{{#defaultValue}} = {{{.}}}{{/defaultValue}};
+{{#vars}}{{#-first}}export const {{classname}}Schema = {{#allParents}}{{#-first}}z.object({}){{/-first}}.merge({{{.}}}Schema){{/allParents}}{{#allParents}}{{#-first}}.extend({ {{/-first}}{{/allParents}}{{^allParents}}z.object({ {{/allParents}}
+{{/-first}}{{/vars}}{{^vars}}{{#additionalPropertiesType}}export const {{classname}}Schema = z.record(z.string(), z.any());{{/additionalPropertiesType}}{{^additionalPropertiesType}}export const {{classname}}Schema = z.object({});{{/additionalPropertiesType}}{{/vars}}{{#vars}}
+{{#description}}
+    /** {{{.}}} */
+{{/description}}
+    {{{name}}}: {{>models/modelZodField}},
+{{/vars}}{{#vars}}{{#-first}}}){{>models/modelGenericAdditionalProperties}};{{/-first}}{{/vars}}
 
-{{/vars}}
-}
+export type {{classname}} = z.infer<typeof {{classname}}Schema>;

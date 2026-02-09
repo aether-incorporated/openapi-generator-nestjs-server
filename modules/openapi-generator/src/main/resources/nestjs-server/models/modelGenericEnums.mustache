@@ -9,6 +9,8 @@ export enum {{classname}}{{enumName}} {
 {{/allowableValues}}
 }
 
+export const {{classname}}{{enumName}}Schema = z.enum([{{#allowableValues}}{{#enumVars}}{{classname}}{{enumName}}.{{name}}{{^-last}}, {{/-last}}{{/enumVars}}{{/allowableValues}}] as const);
+
 {{/isEnum}}
 {{/vars}}
 {{/hasEnums}}

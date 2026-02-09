@@ -1,13 +1,13 @@
 import { Injectable, Module, NotImplementedException } from '@nestjs/common';
 
 {{#imports}}
-import { {{ classname }} } from '../{{ filename }}';
+import { {{ classname }} } from '{{ filename }}';
 {{/imports}}
-import { {{ classname }}Api } from './{{ apiFilename }}.api';
-import { {{#operations}}{{#operation}}{{ operationIdCamelCase }}Context{{^-last}}, {{/-last}}{{/operation}}{{/operations}} } from './{{ apiFilename }}.types';
+import { {{ classname }}Api } from './{{ apiFilename }}-api';
+import { {{#operations}}{{#operation}}{{ operationIdCamelCase }}Context{{^-last}}, {{/-last}}{{/operation}}{{/operations}} } from './{{ apiFilename }}-api.types';
 
 @Injectable()
-export class {{ classname }}ApiImplementation extends {{ classname }}Api {    
+export class {{ classname }}ApiImplementation extends {{ classname }}Api {
     {{#operations}}
     {{#operation}}
     /**
@@ -18,7 +18,7 @@ export class {{ classname }}ApiImplementation extends {{ classname }}Api {
      * {{{.}}}
     {{/notes}}
      */
-    async {{operationId}}(context: {{ operationIdCamelCase }}Context): Promise<{{#returnType}}{{{.}}}{{/returnType}}{{^returnType}}void{{/returnType}}> { 
+    async {{operationId}}(context: {{ operationIdCamelCase }}Context): Promise<{{#returnType}}{{{.}}}{{/returnType}}{{^returnType}}void{{/returnType}}> {
         /**
          * Implementation logic goes here
          */
@@ -30,10 +30,10 @@ export class {{ classname }}ApiImplementation extends {{ classname }}Api {
 }
 
 @Module({
-    providers: [{{ classname }}ApiImplementation],
     imports: [
-        // Add list of imports here
+        // Add custom imports here for your implementation dependencies
     ],
+    providers: [{{ classname }}ApiImplementation],
     exports: [{{ classname }}ApiImplementation],
 })
-export class {{  classname }}ApiImplementationModule {}
+export class {{ classname }}ApiImplementationModule {}

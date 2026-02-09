@@ -47,19 +47,22 @@ public class NestJsServerCodegen extends AbstractTypeScriptClientCodegen {
     private static String FILE_NAME_SUFFIX_PATTERN = "^[a-zA-Z0-9.-]*$";
 
     private static final String DEFAULT_IMPORT_PREFIX = "./";
-    private static final String DEFAULT_MODEL_IMPORT_DIRECTORY_PREFIX = "../";
+    private static final String DEFAULT_MODEL_IMPORT_DIRECTORY_PREFIX = "../../";
 
     public static final String OPERATION_GUARDS = "operationGuards";
 
     public static final String NPM_REPOSITORY = "npmRepository";
+    public static final String IMPORT_PREFIX = "importPrefix";
 
     protected String apiModuleClassName = "ApiModule";
     protected String npmRepository = null;
     protected String serviceSuffix = "Service";
     protected String serviceFileSuffix = ".service";
     protected String modelSuffix = "Dto";
+    protected String schemaSuffix = "Schema";
     protected String modelFileSuffix = ".dto";
     protected String sourceFolder = "src";
+    protected String importPrefix = null;
 
     protected boolean operationGuards = false;
 
@@ -76,6 +79,9 @@ public class NestJsServerCodegen extends AbstractTypeScriptClientCodegen {
         cliOptions.add(CliOption.newBoolean(OPERATION_GUARDS,
                 "Whether to generate individual guards for each operation that can be configured", operationGuards));
 
+        // Custom CLI options
+        this.cliOptions.add(new CliOption(IMPORT_PREFIX, "The prefix import path to use instead of relative import paths, e.g. ~ or @companyname for imports of ~/models/dto/... or @companyname/models/dto/... respectively."));
+
         // Git files
         supportingFiles.add(new SupportingFile("gitignore.mustache", "", ".gitignore"));
         supportingFiles.add(new SupportingFile("git_push.sh.mustache", "", "git_push.sh"));
@@ -87,13 +93,14 @@ public class NestJsServerCodegen extends AbstractTypeScriptClientCodegen {
 
         // API Files
         apiPackage = "api";
-        apiTemplateFiles.put("api" + File.separator + "api.mustache", ".api.ts");
-        apiTemplateFiles.put("api" + File.separator + "api.module.mustache", ".module.ts");    
-        apiTemplateFiles.put("api" + File.separator + "api.controller.mustache", ".controller.ts");
-        apiTemplateFiles.put("api" + File.separator + "api.types.mustache", ".types.ts");
-        apiTemplateFiles.put("api" + File.separator + "api.implementation.mustache", ".implementation.ts");
+        apiTemplateFiles.put("api" + File.separator + "api.mustache", "-api.ts");
+        apiTemplateFiles.put("api" + File.separator + "api.module.mustache", "-api.module.ts");
+        apiTemplateFiles.put("api" + File.separator + "api.controller.mustache", "-api.controller.ts");
+        apiTemplateFiles.put("api" + File.separator + "api.types.mustache", "-api.types.ts");
+        apiTemplateFiles.put("api" + File.separator + "api.implementation.mustache", "-api.implementation.ts");
         supportingFiles.add(new SupportingFile("api" + File.separator + "api-root.module.mustache", getApiDirectory(), "api.module.ts"));
-        supportingFiles.add(new SupportingFile("api" + File.separator + "api-root.types.ts", getApiDirectory(), "types.ts"));
+        supportingFiles.add(new SupportingFile("api" + File.separator + "api-root.types.ts", getApiDirectory(), "api.types.ts"));
+        supportingFiles.add(new SupportingFile("api" + File.separator + "api.validation.pipe.mustache", getApiDirectory(), "api.validation.pipe.ts"));
 
         // Model Files
         modelPackage = "models" + File.separator + "dto";
@@ -154,6 +161,10 @@ public class NestJsServerCodegen extends AbstractTypeScriptClientCodegen {
         //     this.setOperationGuards(Boolean.parseBoolean(additionalProperties.get(CodegenConstants.DELEGATE_PATTERN).toString()));
         // }
 
+        if (additionalProperties.containsKey(IMPORT_PREFIX)) {
+            this.setImportPrefix(additionalProperties.get(IMPORT_PREFIX).toString());
+        }
+
         // if (operationGuards) {
         //     additionalProperties.put("operationGuards", "true");
         //     supportingFiles.add(
@@ -195,6 +206,10 @@ public class NestJsServerCodegen extends AbstractTypeScriptClientCodegen {
         } else {
             return super.getTypeDeclaration(p);
         }
+    }
+
+    private void setImportPrefix(String importPrefix) {
+        this.importPrefix = importPrefix;
     }
 
     public void setOperationGuards(boolean operationGuards) {
@@ -249,8 +264,25 @@ public class NestJsServerCodegen extends AbstractTypeScriptClientCodegen {
         List<CodegenOperation> ops = objs.getOperation();
         boolean hasSomeFormParams = false;
         for (CodegenOperation op : ops) {
+            // Fix isNumeric flag for number types without format (issue with AbstractTypeScriptClientCodegen)
+            for (CodegenParameter param : op.allParams) {
+                if ("number".equalsIgnoreCase(param.dataType) && !param.isInteger && !param.isLong) {
+                    param.isNumeric = true;
+                }
+            }
+
             if (op.getHasFormParams()) {
                 hasSomeFormParams = true;
+
+                // Check if there are any non-file form params
+                boolean hasNonFileFormParams = false;
+                for (CodegenParameter param : op.formParams) {
+                    if (!param.isFile) {
+                        hasNonFileFormParams = true;
+                        break;
+                    }
+                }
+                op.vendorExtensions.put("hasNonFileFormParams", hasNonFileFormParams);
             }
             op.httpMethod = op.httpMethod.toLowerCase(Locale.ENGLISH);
 
@@ -439,7 +471,11 @@ public class NestJsServerCodegen extends AbstractTypeScriptClientCodegen {
         if (importMapping.containsKey(name)) {
             return importMapping.get(name);
         }
-        return DEFAULT_MODEL_IMPORT_DIRECTORY_PREFIX + modelPackage() + "/"
+        String modelImportPrefix = DEFAULT_MODEL_IMPORT_DIRECTORY_PREFIX;
+        if (this.importPrefix != null) {
+            modelImportPrefix = this.importPrefix;
+        }
+        return modelImportPrefix + modelPackage() + "/"
                 + toModelFilename(name.substring(0, name.length() - modelSuffix.length()))
                         .substring(DEFAULT_IMPORT_PREFIX.length());
     }

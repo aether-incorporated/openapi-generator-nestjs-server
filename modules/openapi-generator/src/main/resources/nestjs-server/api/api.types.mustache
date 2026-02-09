@@ -1,12 +1,11 @@
 /*eslint-disable*/
 {{>license-info}}
-import { Expose, Transform } from 'class-transformer';
-import { IsArray, IsBoolean, IsDateString, IsEnum, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { z } from 'zod';
 
 {{#imports}}
-import { {{ classname }} } from '../{{ filename }}';
+import { {{ classname }}, {{ classname }}Schema } from '{{ filename }}';
 {{/imports}}
-import { ServiceContext } from '../types'
+import { ApiContext } from '../api.types'
 {{#operations}}
 {{#operation}}
 
@@ -22,64 +21,76 @@ import { ServiceContext } from '../types'
 /**
  * Form params (@Body) for the {{ operationId }} handler (without file params)
  */
-export class {{ operationIdCamelCase }}FormParams {
-    {{#formParams}}
-    {{^isFile}}
-    {{#lambda.indented}}{{>api/param-data}}{{/lambda.indented}}
-    {{/isFile}}
-    {{/formParams}}
-}
+export const {{ operationIdCamelCase }}FormParamsSchema = z.object({
+{{#formParams}}
+{{^isFile}}
+{{#description}}
+    /** {{{.}}} */
+{{/description}}
+    {{paramName}}: {{>params/paramZodField}},
+{{/isFile}}
+{{/formParams}}
+});
+export type {{ operationIdCamelCase }}FormParams = z.infer<typeof {{ operationIdCamelCase }}FormParamsSchema>;
 {{/hasFormParams}}
 {{#hasHeaderParams}}
 
 /**
  * Header params for the {{ operationId }} handler
  */
-export class {{ operationIdCamelCase }}Headers {
-    {{#headerParams}}
-    
-    @Expose({ name: '{{{baseName}}}' })
-    {{#lambda.indented}}{{>api/param-data}}{{/lambda.indented}}
-    {{/headerParams}}
-}
+export const {{ operationIdCamelCase }}HeadersSchema = z.object({
+{{#headerParams}}
+{{#description}}
+    /** {{{.}}} */
+{{/description}}
+    {{paramName}}: {{>params/paramZodField}},
+{{/headerParams}}
+});
+export type {{ operationIdCamelCase }}Headers = z.infer<typeof {{ operationIdCamelCase }}HeadersSchema>;
 {{/hasHeaderParams}}
 {{#hasQueryParams}}
 
 /**
  * Query params for the {{ operationId }} handler
  */
-export class {{ operationIdCamelCase }}Query {
-    {{#queryParams}}
-    
-    {{#lambda.indented}}{{>api/param-data}}{{/lambda.indented}}
-    {{/queryParams}}
-}
+export const {{ operationIdCamelCase }}QueryParamsSchema = z.object({
+{{#queryParams}}
+{{#description}}
+    /** {{{.}}} */
+{{/description}}
+    {{paramName}}: {{>params/paramZodField}},
+{{/queryParams}}
+});
+export type {{ operationIdCamelCase }}QueryParams = z.infer<typeof {{ operationIdCamelCase }}QueryParamsSchema>;
 {{/hasQueryParams}}
 {{#hasPathParams}}
 
 /**
  * Path params for the {{ operationId }} handler
  */
-export class {{ operationIdCamelCase }}PathParams {
-    {{#pathParams}}
-
-    {{#lambda.indented}}{{>api/param-data}}{{/lambda.indented}}
-    {{/pathParams}}
-}
+export const {{ operationIdCamelCase }}PathParamsSchema = z.object({
+{{#pathParams}}
+{{#description}}
+    /** {{{.}}} */
+{{/description}}
+    {{paramName}}: {{>params/paramZodField}},
+{{/pathParams}}
+});
+export type {{ operationIdCamelCase }}PathParams = z.infer<typeof {{ operationIdCamelCase }}PathParamsSchema>;
 {{/hasPathParams}}
 
-// TODO -- need to handle form / file slightly specially..
-
-export type {{ operationIdCamelCase }}Context = ServiceContext<
+export type {{ operationIdCamelCase }}Context = ApiContext<
 {{#hasBodyParam}}
 {{#bodyParams.0}}
     {{{dataType}}},
 {{/bodyParams.0}}
 {{/hasBodyParam}}
 {{#hasFormParams}}
-    {
+    {{#hasNonFileFormParams}}{{ operationIdCamelCase }}FormParams & {{/hasNonFileFormParams}}{
         {{#formParams}}
-        {{paramName}}: {{{dataType}}};
+        {{#isFile}}
+        {{paramName}}: {{#isArray}}Express.Multer.File[]{{/isArray}}{{^isArray}}Express.Multer.File{{/isArray}};
+        {{/isFile}}
         {{/formParams}}
     },
 {{/hasFormParams}}
@@ -93,7 +104,7 @@ export type {{ operationIdCamelCase }}Context = ServiceContext<
     undefined,
 {{/hasHeaderParams}}
 {{#hasQueryParams}}
-    {{ operationIdCamelCase }}Query,
+    {{ operationIdCamelCase }}QueryParams,
 {{/hasQueryParams}}
 {{^hasQueryParams}}
     undefined,
