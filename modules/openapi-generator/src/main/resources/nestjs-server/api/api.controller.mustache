@@ -75,9 +75,9 @@ export class {{ classname }}ApiController {
     {{/bodyParams.0}}
     {{/hasBodyParam}}
     {{#hasFormParams}}
-    {{#hasNonFileFormParams}}
+    {{#vendorExtensions.x-has-non-file-form-params}}
         @Body(new ApiValidationPipe({{ classname }}Types.{{ operationIdCamelCase }}FormParamsSchema)) formParams: {{ classname }}Types.{{ operationIdCamelCase }}FormParams,
-    {{/hasNonFileFormParams}}
+    {{/vendorExtensions.x-has-non-file-form-params}}
     {{#formParams}}
     {{#isFile}}
     {{#isArray}}
@@ -118,9 +118,9 @@ export class {{ classname }}ApiController {
         {{/hasBodyParam}}
         {{#hasFormParams}}
         const payload = {
-            {{#hasNonFileFormParams}}
+            {{#vendorExtensions.x-has-non-file-form-params}}
             ...formParams,
-            {{/hasNonFileFormParams}}
+            {{/vendorExtensions.x-has-non-file-form-params}}
             {{#formParams}}
             {{#isFile}}
             {{paramName}},

@@ -86,7 +86,7 @@ export type {{ operationIdCamelCase }}Context = ApiContext<
 {{/bodyParams.0}}
 {{/hasBodyParam}}
 {{#hasFormParams}}
-    {{#hasNonFileFormParams}}{{ operationIdCamelCase }}FormParams & {{/hasNonFileFormParams}}{
+    {{#vendorExtensions.x-has-non-file-form-params}}{{ operationIdCamelCase }}FormParams & {{/vendorExtensions.x-has-non-file-form-params}}{
         {{#formParams}}
         {{#isFile}}
         {{paramName}}: {{#isArray}}Express.Multer.File[]{{/isArray}}{{^isArray}}Express.Multer.File{{/isArray}};

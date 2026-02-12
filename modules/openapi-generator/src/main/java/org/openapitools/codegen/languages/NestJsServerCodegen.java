@@ -282,7 +282,7 @@ public class NestJsServerCodegen extends AbstractTypeScriptClientCodegen {
                         break;
                     }
                 }
-                op.vendorExtensions.put("hasNonFileFormParams", hasNonFileFormParams);
+                op.vendorExtensions.put("x-has-non-file-form-params", hasNonFileFormParams);
             }
             op.httpMethod = op.httpMethod.toLowerCase(Locale.ENGLISH);
 
