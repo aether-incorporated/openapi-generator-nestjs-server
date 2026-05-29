@@ -3,7 +3,7 @@
 import { Injectable } from '@nestjs/common';
 
 {{#imports}}
-import { {{ classname }} } from '{{ filename }}';
+import { type {{ classname }} } from '{{ filename }}';
 {{/imports}}
 import { {{#operations}}{{#operation}}{{operationIdCamelCase}}Context{{^-last}}, {{/-last}}{{/operation}}{{/operations}} } from './{{apiFilename}}-api.types'
 

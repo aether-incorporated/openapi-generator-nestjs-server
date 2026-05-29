@@ -5,7 +5,7 @@ import { z } from 'zod';
 {{#imports}}
 import { {{ classname }}, {{ classname }}Schema } from '{{ filename }}';
 {{/imports}}
-import { ApiContext } from '../api.types'
+import { ApiContext } from '{{importRoot}}api/api.types'
 {{#operations}}
 {{#operation}}
 

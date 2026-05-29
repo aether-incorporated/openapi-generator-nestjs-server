@@ -1,7 +1,7 @@
 import { Injectable, Module, NotImplementedException } from '@nestjs/common';
 
 {{#imports}}
-import { {{ classname }} } from '{{ filename }}';
+import { type {{ classname }}, {{ classname }}Schema } from '{{ filename }}';
 {{/imports}}
 import { {{ classname }}Api } from './{{ apiFilename }}-api';
 import { {{#operations}}{{#operation}}{{ operationIdCamelCase }}Context{{^-last}}, {{/-last}}{{/operation}}{{/operations}} } from './{{ apiFilename }}-api.types';

@@ -47,7 +47,11 @@ public class NestJsServerCodegen extends AbstractTypeScriptClientCodegen {
     private static String FILE_NAME_SUFFIX_PATTERN = "^[a-zA-Z0-9.-]*$";
 
     private static final String DEFAULT_IMPORT_PREFIX = "./";
-    private static final String DEFAULT_MODEL_IMPORT_DIRECTORY_PREFIX = "../../";
+    // Default upward path from a generated api tag directory (src/api/<tag>/) to the
+    // source root (src/). Every cross-directory import (auth, models, api siblings)
+    // is reachable from a tag directory at this depth, so it doubles as the shared
+    // "import root" token that the importPrefix option replaces.
+    private static final String DEFAULT_IMPORT_ROOT = "../../";
 
     public static final String OPERATION_GUARDS = "operationGuards";
 
@@ -62,7 +66,11 @@ public class NestJsServerCodegen extends AbstractTypeScriptClientCodegen {
     protected String schemaSuffix = "Schema";
     protected String modelFileSuffix = ".dto";
     protected String sourceFolder = "src";
+    // Raw, normalized prefix (no trailing slash), e.g. "~" or "@acme". Null when unset.
     protected String importPrefix = null;
+    // Shared token prepended to every cross-directory import. Either the default
+    // relative "../../" or, when importPrefix is set, "<importPrefix>/".
+    protected String importRoot = DEFAULT_IMPORT_ROOT;
 
     protected boolean operationGuards = false;
 
@@ -80,7 +88,7 @@ public class NestJsServerCodegen extends AbstractTypeScriptClientCodegen {
                 "Whether to generate individual guards for each operation that can be configured", operationGuards));
 
         // Custom CLI options
-        this.cliOptions.add(new CliOption(IMPORT_PREFIX, "The prefix import path to use instead of relative import paths, e.g. ~ or @companyname for imports of ~/models/dto/... or @companyname/models/dto/... respectively."));
+        this.cliOptions.add(new CliOption(IMPORT_PREFIX, "A path-alias prefix to use instead of relative ('../../') import paths, e.g. '~' or '@companyname' for imports of '~/models/dto/...' or '@companyname/models/dto/...' respectively. Supply the bare prefix (no trailing slash); a matching tsconfig 'paths' mapping (e.g. '~/*' -> 'src/*') is generated automatically. Leave unset to keep relative imports."));
 
         // Git files
         supportingFiles.add(new SupportingFile("gitignore.mustache", "", ".gitignore"));
@@ -164,6 +172,23 @@ public class NestJsServerCodegen extends AbstractTypeScriptClientCodegen {
         if (additionalProperties.containsKey(IMPORT_PREFIX)) {
             this.setImportPrefix(additionalProperties.get(IMPORT_PREFIX).toString());
         }
+
+        // Normalize the prefix (strip any trailing slashes the user supplied) and derive the
+        // shared import root token. When a prefix is set, every cross-directory import resolves
+        // through the alias (e.g. "~/models/dto/..."); otherwise fall back to relative paths.
+        if (this.importPrefix != null && !this.importPrefix.trim().isEmpty()) {
+            String normalized = this.importPrefix.trim().replaceAll("/+$", "");
+            this.importPrefix = normalized;
+            this.importRoot = normalized + "/";
+            // Exposed for the tsconfig "paths" mapping (e.g. key "~/*").
+            additionalProperties.put("importPrefix", normalized);
+        } else {
+            this.importPrefix = null;
+            this.importRoot = DEFAULT_IMPORT_ROOT;
+            additionalProperties.remove("importPrefix");
+        }
+        // Token prepended to cross-directory imports in the templates.
+        additionalProperties.put("importRoot", this.importRoot);
 
         // if (operationGuards) {
         //     additionalProperties.put("operationGuards", "true");
@@ -471,11 +496,12 @@ public class NestJsServerCodegen extends AbstractTypeScriptClientCodegen {
         if (importMapping.containsKey(name)) {
             return importMapping.get(name);
         }
-        String modelImportPrefix = DEFAULT_MODEL_IMPORT_DIRECTORY_PREFIX;
-        if (this.importPrefix != null) {
-            modelImportPrefix = this.importPrefix;
-        }
-        return modelImportPrefix + modelPackage() + "/"
+        // importRoot already ends with "/" (either "../../" or "<importPrefix>/"), so join
+        // directly with the model package to produce e.g. "../../models/dto/foo.dto" or
+        // "~/models/dto/foo.dto". modelPackage() is built with File.separator (so it is
+        // "models\dto" on Windows); toImportPath normalizes it to forward slashes because
+        // this is a TS import specifier, which must use "/" on every OS.
+        return importRoot + toImportPath(modelPackage()) + "/"
                 + toModelFilename(name.substring(0, name.length() - modelSuffix.length()))
                         .substring(DEFAULT_IMPORT_PREFIX.length());
     }
@@ -510,5 +536,16 @@ public class NestJsServerCodegen extends AbstractTypeScriptClientCodegen {
     private String convertUsingFileNamingConvention(String originalName) {
         String name = originalName; // this.removeModelPrefixSuffix(originalName);
         return dashize(underscore(name));
+    }
+
+    /**
+     * Normalize an OS-style package path (which may contain File.separator, e.g.
+     * "models\dto" on Windows) into a TypeScript/ESM import specifier. Import
+     * specifiers, tsconfig "paths", and npm paths always use forward slashes on
+     * every platform, so anything that ends up inside an {@code import ... from '...'}
+     * statement must go through this rather than being emitted with File.separator.
+     */
+    private String toImportPath(String osPath) {
+        return osPath.replace(File.separatorChar, '/');
     }
 }

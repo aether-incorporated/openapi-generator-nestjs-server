@@ -21,12 +21,12 @@ import {
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import accepts from 'accepts';
 
-import { ApiValidationPipe } from '../api.validation.pipe';
+import { ApiValidationPipe } from '{{importRoot}}api/api.validation.pipe';
 {{#hasAuthMethods}}
-import { {{#authMethods}}{{#lambda.pascalcase}}{{name}}{{/lambda.pascalcase}}{{^-last}}, {{/-last}}{{/authMethods}} } from '../../auth/auth.decorator';
+import { {{#authMethods}}{{#lambda.pascalcase}}{{name}}{{/lambda.pascalcase}}{{^-last}}, {{/-last}}{{/authMethods}} } from '{{importRoot}}auth/auth.decorator';
 {{/hasAuthMethods}}
 {{#imports}}
-import { {{ classname }}, {{ classname }}Schema } from '{{ filename }}';
+import { type {{ classname }}, {{ classname }}Schema } from '{{ filename }}';
 {{/imports}}
 import { {{ classname }}Api } from './{{ apiFilename }}-api';
 import * as {{ classname }}Types from './{{ apiFilename }}-api.types';
